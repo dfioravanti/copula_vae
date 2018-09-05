@@ -111,4 +111,4 @@ dmypy.json
 
 #project
 .idea/
-dataset/
+datasets/

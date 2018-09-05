@@ -24,3 +24,4 @@ def compute_hash(path):
 def exists_and_correct_hash(path, hash):
 
     return True if os.path.isfile(path) and compute_hash(path) == hash else False
+

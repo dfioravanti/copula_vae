@@ -3,6 +3,8 @@ import pathlib
 
 import urllib.request
 
+import pandas as pd
+
 import torch
 import torch.utils.data as data_utils
 
@@ -14,6 +16,7 @@ class BinaryMNISTDataset(data_utils.Dataset):
 
     """
         MNIST dataset processed to be just black and white without gray
+        TODO: Fix this mess, now I am loading everything everytime. I should load only the right stuff
     """
 
     URL_test = 'http://www.cs.toronto.edu/~larocheh/public/datasets/' \
@@ -28,14 +31,29 @@ class BinaryMNISTDataset(data_utils.Dataset):
                      'binarized_mnist/binarized_mnist_valid.amat'
     sha1_validation = '13418487742e6ea6d48db7b5187353a20b1b1f8c'
 
-    def __init__(self, root_dir=None, download=True):
+    shape = [1, 28, 28]
+
+    def __init__(self,
+                 root_dir=None,
+                 download=True,
+                 train=True,
+                 test=False,
+                 validation=False,
+                 transform=None):
         """
         Args:
-            csv_file (string): Path to the csv file with annotations.
             root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
+            download (binary): Should I download the file
+            transform (callable): Optional transform to be applied on a sample.
         """
+
+        if not ((train == True and test == validation == False) or
+                (test == True and train == validation == False) or
+                (validation == True and train == test == False)):
+            raise ValueError("Please select one and only one between train, test and validation")
+
+        self.transform = transform
+
         if root_dir is None:
             root_dir = pathlib.Path(__file__).parents[0] / 'datasets'
 
@@ -45,7 +63,6 @@ class BinaryMNISTDataset(data_utils.Dataset):
         self.dataset_path = root_dir / f'{self.__class__.__name__}'
         self.test_path = self.dataset_path / 'binarized_mnist_test.amat'
         self.train_path = self.dataset_path / 'binarized_mnist_train.amat'
-        self.sha1_train
         self.valid_path = self.dataset_path / 'binarized_mnist_valid.amat'
 
         if download:
@@ -76,8 +93,31 @@ class BinaryMNISTDataset(data_utils.Dataset):
             else:
                 print('validation exists and the hash matches, skip')
 
+        train_df = pd.read_csv(self.train_path, sep=' ', index_col=False, header=None)
+        test_df = pd.read_csv(self.test_path, sep=' ', index_col=False, header=None)
+        valid_df = pd.read_csv(self.valid_path, sep=' ', index_col=False, header=None)
+
+        if train:
+            self.values = train_df.values
+        elif test:
+            self.values = test_df.values
+        elif validation:
+            self.values = valid_df.values
+
+    def __len__(self):
+        return len(self.values)
+
+    def __getitem__(self, idx):
+        sample = self.values[idx, :]
+
+        if self.transform:
+            sample = self.transform(sample)
+
+        return sample
+
 
 if __name__ == '__main__':
 
-    dataset = BinaryMNISTDataset('../datasets/', True)
-    
+    dataset = BinaryMNISTDataset('../datasets/', True, train=False)
+
+    print(len(dataset))

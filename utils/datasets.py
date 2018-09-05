@@ -93,15 +93,14 @@ class BinaryMNISTDataset(data_utils.Dataset):
             else:
                 print('validation exists and the hash matches, skip')
 
-        train_df = pd.read_csv(self.train_path, sep=' ', index_col=False, header=None)
-        test_df = pd.read_csv(self.test_path, sep=' ', index_col=False, header=None)
-        valid_df = pd.read_csv(self.valid_path, sep=' ', index_col=False, header=None)
-
         if train:
+            train_df = pd.read_csv(self.train_path, sep=' ', index_col=False, header=None)
             self.values = train_df.values
         elif test:
+            test_df = pd.read_csv(self.test_path, sep=' ', index_col=False, header=None)
             self.values = test_df.values
         elif validation:
+            valid_df = pd.read_csv(self.valid_path, sep=' ', index_col=False, header=None)
             self.values = valid_df.values
 
     def __len__(self):
@@ -118,6 +117,6 @@ class BinaryMNISTDataset(data_utils.Dataset):
 
 if __name__ == '__main__':
 
-    dataset = BinaryMNISTDataset('../datasets/', True, train=False)
+    dataset = BinaryMNISTDataset('../datasets/', True, train=True)
 
     print(len(dataset))

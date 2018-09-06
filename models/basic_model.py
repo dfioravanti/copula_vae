@@ -1,6 +1,8 @@
 
 import abc
 
+import numpy as np
+
 import torch
 import torch.nn as nn
 
@@ -27,8 +29,44 @@ class BaseVAE(nn.Module):
 
         return zero_one_normal.mul(variance).add(mean)
 
+    def train_epoch(self,
+                    optimizer,
+                    loader,
+                    epoch,
+                    warmup=None,
+                    verbose=True):
+
+        self.train()
+
+        batch_losses = batch_REs = batch_KLs = np.zeros(len(loader))
+
+        if warmup is None:
+            beta = 1
+        else:
+            beta = min(epoch/warmup, 1)
+
+        if verbose:
+            print(f'Training with beta = {beta}')
+
+        for batch_idx, xs in enumerate(loader):
+
+            optimizer.zero_grad()
+            loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
+            loss.backward()
+            optimizer.step()
+
+            batch_losses[batch_idx] = loss
+            batch_REs[batch_idx] = reconstruction_error
+            batch_KLs[batch_idx] = KL
+
+        epoch_loss = np.average(batch_losses)
+        epoch_RE = np.average(batch_REs)
+        epoch_KLs = np.average(batch_KLs)
+
+        return epoch_loss, epoch_RE, epoch_KLs
+
     @abc.abstractmethod
-    def calculate_loss(self):
+    def calculate_loss(self, xs, beta, average=True):
         return
 
     @abc.abstractmethod

@@ -30,9 +30,9 @@ class BaseVAE(nn.Module):
         return zero_one_normal.mul(variance).add(mean)
 
     def train_epoch(self,
-                    optimizer,
-                    loader,
                     epoch,
+                    loader,
+                    optimizer,
                     warmup=None,
                     verbose=True):
 
@@ -64,6 +64,29 @@ class BaseVAE(nn.Module):
         epoch_KLs = np.average(batch_KLs)
 
         return epoch_loss, epoch_RE, epoch_KLs
+
+    def validation_epoch(self,
+                         epoch,
+                         loader,
+                         verbose=True):
+
+        self.eval()
+
+        batch_losses = batch_REs = batch_KLs = np.zeros(len(loader))
+
+        for batch_idx, xs in enumerate(loader):
+
+            loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
+
+            batch_losses[batch_idx] = loss
+            batch_REs[batch_idx] = reconstruction_error
+            batch_KLs[batch_idx] = KL
+
+        val_loss = np.average(batch_losses)
+        val_RE = np.average(batch_REs)
+        val_KLs = np.average(batch_KLs)
+
+        return val_loss, val_RE, val_KLs
 
     @abc.abstractmethod
     def calculate_loss(self, xs, beta, average=True):

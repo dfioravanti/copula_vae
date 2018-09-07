@@ -46,7 +46,7 @@ class BaseVAE(nn.Module):
             print(f'Training with beta = {beta}')
 
         for batch_idx, xs in enumerate(loader):
-    
+
             optimizer.zero_grad()
             loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
             loss.backward()
@@ -65,8 +65,7 @@ class BaseVAE(nn.Module):
     def validation_epoch(self,
                          epoch,
                          loader,
-                         warmup=None,
-                         verbose=True):
+                         warmup=None):
 
         self.eval()
 

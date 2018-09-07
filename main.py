@@ -60,7 +60,7 @@ parser.add_argument('--dynamic_binarization', action='store_true', default=False
 args = parser.parse_args()
 args.cuda = args.no_cuda and torch.cuda.is_available()
 
-args.device = torch.device("gpu") if args.cuda else torch.device("cpu")
+args.device = torch.device("cuda") if args.cuda else torch.device("cpu")
 
 random.seed(args.seed)
 torch.manual_seed(args.seed)

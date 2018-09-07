@@ -9,9 +9,6 @@ import torch
 from torch.utils.data import DataLoader
 from torch.optim import Adam
 
-import matplotlib as mpl
-mpl.use('Agg')
-
 # Training settings
 parser = argparse.ArgumentParser(description='VAE')
 

@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from utils.plot_utils import plot_grid_images_file
+
 
 class BaseVAE(nn.Module):
 
@@ -14,9 +16,15 @@ class BaseVAE(nn.Module):
     def __init__(self,
                  number_latent_variables,
                  input_shape,
+                 output_dir=None,
                  device=torch.device("cpu")):
 
         super(BaseVAE, self).__init__()
+
+        self.output_dir = output_dir
+
+        if self.output_dir is not None:
+            self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.number_latent_variables = number_latent_variables
         self.input_shape = input_shape
@@ -46,8 +54,11 @@ class BaseVAE(nn.Module):
             print(f'Training with beta = {beta}')
 
         for batch_idx, xs in enumerate(loader):
-            
+
             xs = xs.to(self.device)
+
+            if batch_idx == 0 and self.output_dir is not None:
+                self._plot_reconstruction(xs, epoch)
 
             optimizer.zero_grad()
             loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
@@ -99,6 +110,20 @@ class BaseVAE(nn.Module):
             beta = min(epoch/warmup, 1)
 
         return beta
+
+    def _plot_reconstruction(self,
+                             xs,
+                             epoch):
+
+        xs_reconstructed, _, _ = self.forward(xs)
+
+        xs_reconstructed = xs.view((-1,) + self.input_shape)
+
+        filename = self.output_dir / f'Epoch {epoch}'
+
+        plot_grid_images_file(xs_reconstructed.numpy()[0:10, :],
+                              columns=5,
+                              filename=filename)
 
     @abc.abstractmethod
     def calculate_loss(self, xs, beta=1):

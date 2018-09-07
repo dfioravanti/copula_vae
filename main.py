@@ -1,7 +1,6 @@
 import argparse
 import random
-
-import numpy as np
+import pathlib
 
 from models.VAE import VAE
 from utils import datasets
@@ -57,7 +56,12 @@ parser.add_argument('--dataset_name', type=str, default='binary_mnist', metavar=
 parser.add_argument('--dynamic_binarization', action='store_true', default=False,
                     help='allow dynamic binarization')
 
+parser.add_argument('--output_dir', type=str, default='./outputs',
+                    help='Location of the output directory')
+
 args = parser.parse_args()
+
+args.output_dir = pathlib.Path(args.output_dir)
 args.cuda = args.no_cuda and torch.cuda.is_available()
 
 args.device = torch.device("cuda:0") if args.cuda else torch.device("cpu")
@@ -76,6 +80,7 @@ def main(args):
         model = VAE(number_latent_variables=40,
                     input_shape=input_shape,
                     encoder_output_size=300,
+                    output_dir=args.output_dir,
                     device=args.device)
 
     model = model.to(args.device)
@@ -88,8 +93,11 @@ def main(args):
                         verbose=True,
                         early_stopping_tolerance=10)
 
+    print('Done')
+
 
 def load_dataset(dataset_name, batch_size=50):
+
     if dataset_name == 'binary_mnist':
         train_dataset = datasets.BinaryMNISTDataset('datasets/', True, train=True)
         test_dataset = datasets.BinaryMNISTDataset('datasets/', True, train=False, test=True)

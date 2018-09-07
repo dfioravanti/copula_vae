@@ -5,7 +5,6 @@ import urllib.request
 
 import pandas as pd
 
-import torch
 import torch.utils.data as data_utils
 
 import numpy as np
@@ -31,7 +30,7 @@ class BinaryMNISTDataset(data_utils.Dataset):
                      'binarized_mnist/binarized_mnist_valid.amat'
     sha1_validation = '13418487742e6ea6d48db7b5187353a20b1b1f8c'
 
-    shape = (1, 28, 28)
+    shape = (28, 28)
 
     def __init__(self,
                  root_dir=None,

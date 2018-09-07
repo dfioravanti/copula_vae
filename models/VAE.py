@@ -14,9 +14,11 @@ class VAE(BaseVAE):
                  number_latent_variables,
                  input_shape,
                  encoder_output_size=300,
+                 output_dir=None,
                  device=torch.device("cpu")):
         super(VAE, self).__init__(number_latent_variables=number_latent_variables,
                                   input_shape=input_shape,
+                                  output_dir=output_dir,
                                   device=device)
 
         self.encoder_output_size = encoder_output_size
@@ -97,7 +99,7 @@ class VAE(BaseVAE):
                                                                                 loader=loader_validation)
 
             if verbose:
-                print(f'epoch: {epoch} => train loss: {epoch_train_loss} and val loss: {epoch_val_loss}')
+                print(f'epoch: {epoch}/{epochs} => train loss: {epoch_train_loss} and val loss: {epoch_val_loss}')
 
             if epoch_val_loss > best_loss:
 

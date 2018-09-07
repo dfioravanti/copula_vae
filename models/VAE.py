@@ -12,11 +12,11 @@ class VAE(BaseVAE):
 
     def __init__(self,
                  number_latent_variables,
-                 input_size,
+                 input_shape,
                  encoder_output_size=300,
                  device=torch.device("cpu")):
         super(VAE, self).__init__(number_latent_variables=number_latent_variables,
-                                  input_size=input_size,
+                                  input_shape=input_shape,
                                   device=device)
 
         self.encoder_output_size = encoder_output_size
@@ -24,8 +24,10 @@ class VAE(BaseVAE):
         # Encoder q(z|x)
 
         self.q_z_layers = nn.Sequential(
-            nn.ReLU(nn.Linear(np.prod(self.input_size), 300)),
-            nn.ReLU(nn.Linear(300, self.encoder_output_size))
+            nn.Linear(np.prod(self.input_shape), 300),
+            nn.ReLU(),
+            nn.Linear(300, self.encoder_output_size),
+            nn.ReLU()
         )
 
         self.mean = nn.Linear(self.encoder_output_size, self.number_latent_variables)
@@ -34,11 +36,18 @@ class VAE(BaseVAE):
         # Decoder p(x|z)
 
         self.p_x_layers = nn.Sequential(
-            nn.ReLU(nn.Linear((self.number_latent_variables, 300))),
-            nn.ReLU(nn.Linear((300, 300)))
+            nn.Linear(self.number_latent_variables, 300),
+            nn.ReLU(),
+            nn.Linear(300, 300),
+            nn.ReLU()
         )
 
-        self.output_decoder = F.sigmoid(nn.Linear(300, input_size))
+        self.output_decoder = nn.Sequential(
+            nn.Linear(300, np.prod(self.input_shape)),
+            nn.Sigmoid()
+        )
+
+        self.to(device)
 
     def forward(self, x):
         mean_z_x, log_var_z_x = self.q_z(x)
@@ -58,17 +67,13 @@ class VAE(BaseVAE):
         z = self.p_x_layers(z)
         return self.output_decoder(z)
 
-    def calculate_loss(self, xs, beta, average=True):
+    def calculate_loss(self, xs, beta=1):
         xs_recontructed, mean_z_x, log_var_z_x = self.forward(xs)
 
-        RE = F.binary_cross_entropy(xs_recontructed, xs.view(-1, 784), reduction='none')
-        KL = -0.5 * torch.sum(1 + log_var_z_x - mean_z_x.pow(2) - log_var_z_x.exp())
+        RE = F.binary_cross_entropy(xs_recontructed, xs)
+        KL = torch.mean(-0.5 * torch.sum(1 + log_var_z_x - mean_z_x.pow(2) - log_var_z_x.exp()))
 
-        if average:
-            RE = torch.mean(RE)
-            KL = torch.mean(KL)
-
-        return RE + beta * KL
+        return RE + beta * KL, RE, KL
 
     def train_dataset(self,
                       loader_train,

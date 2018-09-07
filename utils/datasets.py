@@ -31,7 +31,7 @@ class BinaryMNISTDataset(data_utils.Dataset):
                      'binarized_mnist/binarized_mnist_valid.amat'
     sha1_validation = '13418487742e6ea6d48db7b5187353a20b1b1f8c'
 
-    shape = [1, 28, 28]
+    shape = (1, 28, 28)
 
     def __init__(self,
                  root_dir=None,
@@ -94,13 +94,13 @@ class BinaryMNISTDataset(data_utils.Dataset):
                 print('validation exists and the hash matches, skip')
 
         if train:
-            train_df = pd.read_csv(self.train_path, sep=' ', index_col=False, header=None)
+            train_df = pd.read_csv(self.train_path, sep=' ', index_col=False, header=None, dtype=np.float32)
             self.values = train_df.values
         elif test:
-            test_df = pd.read_csv(self.test_path, sep=' ', index_col=False, header=None)
+            test_df = pd.read_csv(self.test_path, sep=' ', index_col=False, header=None, dtype=np.float32)
             self.values = test_df.values
         elif validation:
-            valid_df = pd.read_csv(self.valid_path, sep=' ', index_col=False, header=None)
+            valid_df = pd.read_csv(self.valid_path, sep=' ', index_col=False, header=None, dtype=np.float32)
             self.values = valid_df.values
 
     def __len__(self):

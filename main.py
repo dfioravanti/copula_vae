@@ -1,7 +1,9 @@
 import argparse
 import random
 
-from models import VAE
+import numpy as np
+
+from models.VAE import VAE
 from utils import datasets
 
 import torch
@@ -58,6 +60,8 @@ parser.add_argument('--dynamic_binarization', action='store_true', default=False
 args = parser.parse_args()
 args.cuda = args.no_cuda and torch.cuda.is_available()
 
+args.device = torch.device("gpu") if args.cuda else torch.device("cpu")
+
 random.seed(args.seed)
 torch.manual_seed(args.seed)
 if args.cuda:
@@ -66,14 +70,17 @@ if args.cuda:
 
 def main(args):
 
-    train_loader, validation_loader, test_loader = load_dataset(args.dataset_name)
+    train_loader, validation_loader, test_loader, input_shape = load_dataset(args.dataset_name)
 
     if args.prior == 'standard':
-        model = VAE()
+        model = VAE(number_latent_variables=40,
+                    input_shape=input_shape,
+                    encoder_output_size=300,
+                    device=args.device)
 
     model.train_dataset(train_loader,
                         validation_loader,
-                        optimizer=Adam(),
+                        optimizer=Adam(model.parameters()),
                         epochs=50,
                         warmup=10,
                         verbose=True,
@@ -84,7 +91,8 @@ def load_dataset(dataset_name, batch_size=50):
     if dataset_name == 'binary_mnist':
         train_dataset = datasets.BinaryMNISTDataset('datasets/', True, train=True)
         test_dataset = datasets.BinaryMNISTDataset('datasets/', True, train=False, test=True)
-        val_dataset = datasets.BinaryMNISTDataset('datasets/', True, train=True, validation=True)
+        val_dataset = datasets.BinaryMNISTDataset('datasets/', True, train=False, validation=True)
+        input_shape = datasets.BinaryMNISTDataset.shape
 
     train_loader = DataLoader(train_dataset,
                               batch_size=batch_size,
@@ -98,7 +106,7 @@ def load_dataset(dataset_name, batch_size=50):
                              batch_size=batch_size,
                              shuffle=True, num_workers=4)
 
-    return train_loader, validation_loader, test_loader
+    return train_loader, validation_loader, test_loader, input_shape
 
 
 if __name__ == '__main__':

@@ -13,13 +13,13 @@ class BaseVAE(nn.Module):
 
     def __init__(self,
                  number_latent_variables,
-                 input_size,
+                 input_shape,
                  device=torch.device("cpu")):
 
         super(BaseVAE, self).__init__()
 
         self.number_latent_variables = number_latent_variables
-        self.input_size = input_size
+        self.input_shape = input_shape
         self.device = device
 
     def sampling_normal_with_reparametrization(self, mean, log_variance):
@@ -40,16 +40,13 @@ class BaseVAE(nn.Module):
 
         batch_losses = batch_REs = batch_KLs = np.zeros(len(loader))
 
-        if warmup is None:
-            beta = 1
-        else:
-            beta = min(epoch/warmup, 1)
+        beta = self._compute_beta(epoch, warmup)
 
         if verbose:
             print(f'Training with beta = {beta}')
 
         for batch_idx, xs in enumerate(loader):
-
+    
             optimizer.zero_grad()
             loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
             loss.backward()
@@ -68,9 +65,12 @@ class BaseVAE(nn.Module):
     def validation_epoch(self,
                          epoch,
                          loader,
+                         warmup=None,
                          verbose=True):
 
         self.eval()
+
+        beta = self._compute_beta(epoch, warmup)
 
         batch_losses = batch_REs = batch_KLs = np.zeros(len(loader))
 
@@ -88,8 +88,17 @@ class BaseVAE(nn.Module):
 
         return val_loss, val_RE, val_KLs
 
+    def _compute_beta(self, epoch, warmup):
+
+        if warmup is None:
+            beta = 1
+        else:
+            beta = min(epoch/warmup, 1)
+
+        return beta
+
     @abc.abstractmethod
-    def calculate_loss(self, xs, beta, average=True):
+    def calculate_loss(self, xs, beta=1):
         return
 
     @abc.abstractmethod
@@ -115,7 +124,7 @@ class BaseVAE(nn.Module):
 
 if __name__ == '__main__':
 
-    test = BaseVAE(number_latent_variables=1, input_size=1)
+    test = BaseVAE(number_latent_variables=1, input_shape=1)
     log_variance = torch.tensor(1, dtype=torch.float32)
     mean = torch.tensor(0, dtype=torch.float32)
     print(test.sampling_normal_with_reparametrization(mean=mean, log_variance=log_variance))

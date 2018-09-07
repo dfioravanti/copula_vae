@@ -121,7 +121,7 @@ class BaseVAE(nn.Module):
 
         filename = self.output_dir / f'Epoch {epoch}'
 
-        plot_grid_images_file(xs_reconstructed.numpy()[0:10, :],
+        plot_grid_images_file(xs_reconstructed.to('cpu').numpy()[0:10, :],
                               columns=5,
                               filename=filename)
 

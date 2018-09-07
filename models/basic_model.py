@@ -46,8 +46,8 @@ class BaseVAE(nn.Module):
             print(f'Training with beta = {beta}')
 
         for batch_idx, xs in enumerate(loader):
-
-            xs.to(self.device)
+            
+            xs = xs.to(self.device)
 
             optimizer.zero_grad()
             loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
@@ -77,7 +77,7 @@ class BaseVAE(nn.Module):
 
         for batch_idx, xs in enumerate(loader):
 
-            xs.to(self.device)
+            xs = xs.to(self.device)
 
             loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
 

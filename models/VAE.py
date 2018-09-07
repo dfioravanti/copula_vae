@@ -96,8 +96,7 @@ class VAE(BaseVAE):
                                                                                  verbose=verbose)
 
             epoch_val_loss, epoch_val_RE, epoch_val_KLs = self.validation_epoch(epoch=epoch,
-                                                                                loader=loader_validation,
-                                                                                verbose=verbose)
+                                                                                loader=loader_validation)
 
             if verbose:
                 print(f'epoch: {epoch} => train loss: {epoch_train_loss} and val loss: {epoch_val_loss}')

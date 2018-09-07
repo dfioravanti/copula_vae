@@ -47,6 +47,8 @@ class BaseVAE(nn.Module):
 
         for batch_idx, xs in enumerate(loader):
 
+            xs.to(self.device)
+
             optimizer.zero_grad()
             loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
             loss.backward()
@@ -74,6 +76,8 @@ class BaseVAE(nn.Module):
         batch_losses = batch_REs = batch_KLs = np.zeros(len(loader))
 
         for batch_idx, xs in enumerate(loader):
+
+            xs.to(self.device)
 
             loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
 

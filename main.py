@@ -78,6 +78,8 @@ def main(args):
                     encoder_output_size=300,
                     device=args.device)
 
+    model = model.to(args.device)
+
     model.train_dataset(train_loader,
                         validation_loader,
                         optimizer=Adam(model.parameters()),

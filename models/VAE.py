@@ -47,8 +47,6 @@ class VAE(BaseVAE):
             nn.Sigmoid()
         )
 
-        self.to(device)
-
     def forward(self, x):
         mean_z_x, log_var_z_x = self.q_z(x)
         z_x = self.sampling_normal_with_reparametrization(mean_z_x, log_var_z_x)

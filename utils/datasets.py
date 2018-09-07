@@ -15,7 +15,6 @@ class BinaryMNISTDataset(data_utils.Dataset):
 
     """
         MNIST dataset processed to be just black and white without gray
-        TODO: Fix this mess, now I am loading everything everytime. I should load only the right stuff
     """
 
     URL_test = 'http://www.cs.toronto.edu/~larocheh/public/datasets/' \
@@ -69,28 +68,29 @@ class BinaryMNISTDataset(data_utils.Dataset):
             self.dataset_path.mkdir(parents=True, exist_ok=True)
             print(f'dataset directory is {self.dataset_path}')
 
-            print(f'Beginning file download for {self.__class__.__name__}')
+            if test:
+                if not exists_and_correct_hash(self.test_path, BinaryMNISTDataset.sha1_test):
+                    print('Downloading test')
+                    urllib.request.urlretrieve(BinaryMNISTDataset.URL_test,
+                                               self.test_path)
+                else:
+                    print('test exists and the hash matches, skip')
 
-            if not exists_and_correct_hash(self.test_path, BinaryMNISTDataset.sha1_test):
-                print('Downloading test')
-                urllib.request.urlretrieve(BinaryMNISTDataset.URL_test,
-                                           self.test_path)
-            else:
-                print('test exists and the hash matches, skip')
+            if train:
+                if not exists_and_correct_hash(self.train_path, BinaryMNISTDataset.sha1_train):
+                    print('Downloading train')
+                    urllib.request.urlretrieve(BinaryMNISTDataset.URL_train,
+                                               self.train_path)
+                else:
+                    print('train exists and the hash matches, skip')
 
-            if not exists_and_correct_hash(self.train_path, BinaryMNISTDataset.sha1_train):
-                print('Downloading train')
-                urllib.request.urlretrieve(BinaryMNISTDataset.URL_train,
-                                           self.train_path)
-            else:
-                print('train exists and the hash matches, skip')
-
-            if not exists_and_correct_hash(self.valid_path, BinaryMNISTDataset.sha1_validation):
-                print('Downloading validation')
-                urllib.request.urlretrieve(BinaryMNISTDataset.URL_validation,
-                                           self.valid_path)
-            else:
-                print('validation exists and the hash matches, skip')
+            if validation:
+                if not exists_and_correct_hash(self.valid_path, BinaryMNISTDataset.sha1_validation):
+                    print('Downloading validation')
+                    urllib.request.urlretrieve(BinaryMNISTDataset.URL_validation,
+                                               self.valid_path)
+                else:
+                    print('validation exists and the hash matches, skip')
 
         if train:
             train_df = pd.read_csv(self.train_path, sep=' ', index_col=False, header=None, dtype=np.float32)
@@ -107,11 +107,12 @@ class BinaryMNISTDataset(data_utils.Dataset):
 
     def __getitem__(self, idx):
         sample = self.values[idx, :]
+        label = np.zeros_like(sample)
 
         if self.transform:
             sample = self.transform(sample)
 
-        return sample
+        return sample, label
 
 
 if __name__ == '__main__':

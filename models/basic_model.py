@@ -53,7 +53,7 @@ class BaseVAE(nn.Module):
         if verbose:
             print(f'Training with beta = {beta}')
 
-        for batch_idx, xs in enumerate(loader):
+        for batch_idx, (xs, _) in enumerate(loader):
 
             xs = xs.to(self.device)
 
@@ -86,7 +86,7 @@ class BaseVAE(nn.Module):
 
         batch_losses = batch_REs = batch_KLs = np.zeros(len(loader))
 
-        for batch_idx, xs in enumerate(loader):
+        for batch_idx, (xs, _) in enumerate(loader):
 
             xs = xs.to(self.device)
 
@@ -126,7 +126,7 @@ class BaseVAE(nn.Module):
                               filename=filename)
 
     @abc.abstractmethod
-    def calculate_loss(self, xs, beta=1):
+    def calculate_loss(self, xs, beta=1, loss=nn.MSELoss()):
         return
 
     @abc.abstractmethod

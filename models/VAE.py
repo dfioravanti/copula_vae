@@ -5,8 +5,6 @@ import math
 import numpy as np
 import torch
 from torch import nn
-from torch.nn import functional as F
-
 
 class VAE(BaseVAE):
 
@@ -67,10 +65,10 @@ class VAE(BaseVAE):
         z = self.p_x_layers(z)
         return self.output_decoder(z)
 
-    def calculate_loss(self, xs, beta=1):
+    def calculate_loss(self, xs, beta=1, loss=nn.MSELoss()):
         xs_recontructed, mean_z_x, log_var_z_x = self.forward(xs)
 
-        RE = F.binary_cross_entropy(xs_recontructed, xs)
+        RE = loss(xs_recontructed, xs)
         KL = torch.mean(-0.5 * torch.sum(1 + log_var_z_x - mean_z_x.pow(2) - log_var_z_x.exp()))
 
         return RE + beta * KL, RE, KL

@@ -1,4 +1,5 @@
 
+import sys
 import pathlib
 
 import urllib.request
@@ -53,7 +54,7 @@ class BinaryMNISTDataset(data_utils.Dataset):
         self.transform = transform
 
         if root_dir is None:
-            root_dir = pathlib.Path(__file__).parents[0] / 'datasets'
+            root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
 
         if not isinstance(root_dir, pathlib.Path):
             root_dir = pathlib.Path(root_dir)

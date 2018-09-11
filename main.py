@@ -2,8 +2,10 @@ import argparse
 import random
 import pathlib
 
+from loaders import load_funtions
+
 from models.VAE import VAE
-from utils import datasets
+from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 
 import torch
 from torch.utils.data import DataLoader
@@ -99,22 +101,9 @@ def main(args):
 def load_dataset(dataset_name, batch_size=50):
 
     if dataset_name == 'binary_mnist':
-        train_dataset = datasets.BinaryMNISTDataset('datasets/', True, train=True)
-        test_dataset = datasets.BinaryMNISTDataset('datasets/', True, train=False, test=True)
-        val_dataset = datasets.BinaryMNISTDataset('datasets/', True, train=False, validation=True)
-        input_shape = datasets.BinaryMNISTDataset.shape
 
-    train_loader = DataLoader(train_dataset,
-                              batch_size=batch_size,
-                              shuffle=True, num_workers=4)
-
-    validation_loader = DataLoader(val_dataset,
-                                   batch_size=batch_size,
-                                   shuffle=True, num_workers=4)
-
-    test_loader = DataLoader(test_dataset,
-                             batch_size=batch_size,
-                             shuffle=True, num_workers=4)
+        train_loader, test_loader, validation_loader = load_funtions.load_binary_MNIST(batch_size=batch_size)
+        input_shape = BinaryMNISTDataset.shape
 
     return train_loader, validation_loader, test_loader, input_shape
 

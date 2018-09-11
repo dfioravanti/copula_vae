@@ -65,7 +65,7 @@ class VAE(BaseVAE):
         z = self.p_x_layers(z)
         return self.output_decoder(z)
 
-    def calculate_loss(self, xs, beta=1, loss=nn.MSELoss()):
+    def calculate_loss(self, xs, beta=1, loss=nn.L1Loss()):
         xs_recontructed, mean_z_x, log_var_z_x = self.forward(xs)
 
         RE = loss(xs_recontructed, xs)

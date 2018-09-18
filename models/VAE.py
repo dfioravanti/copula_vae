@@ -100,7 +100,7 @@ class VAE(BaseVAE):
             if verbose:
                 print(f'epoch: {epoch}/{epochs} => train loss: {epoch_train_loss} and val loss: {epoch_val_loss}')
 
-            if epoch_val_loss > best_loss:
+            if epoch_val_loss < best_loss:
 
                 early_stopping_strikes = 0
                 best_loss = epoch_val_loss

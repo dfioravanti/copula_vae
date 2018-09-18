@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from torch import nn
 
+
 class VAE(BaseVAE):
 
     def __init__(self,

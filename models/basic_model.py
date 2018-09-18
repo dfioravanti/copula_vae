@@ -55,7 +55,7 @@ class BaseVAE(nn.Module):
 
         for batch_idx, (xs, _) in enumerate(loader):
 
-            xs = xs.to(self.device)
+            xs = xs.view(loader.batch_size, -1).to(self.device)
 
             if batch_idx == 0 and self.output_dir is not None:
                 self._plot_reconstruction(xs, epoch)
@@ -88,7 +88,7 @@ class BaseVAE(nn.Module):
 
         for batch_idx, (xs, _) in enumerate(loader):
 
-            xs = xs.to(self.device)
+            xs = xs.view(loader.batch_size, -1).to(self.device)
 
             loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
 
@@ -117,11 +117,11 @@ class BaseVAE(nn.Module):
 
         xs_reconstructed, _, _ = self.forward(xs)
 
-        xs_reconstructed = xs.view((-1,) + self.input_shape)
+        xs_reconstructed = xs_reconstructed.view((-1,) + self.input_shape)
 
         filename = self.output_dir / f'Epoch {epoch}'
 
-        plot_grid_images_file(xs_reconstructed.to('cpu').numpy()[0:10, :],
+        plot_grid_images_file(xs_reconstructed.to('cpu').detach().numpy()[0:10, :],
                               columns=5,
                               filename=filename)
 

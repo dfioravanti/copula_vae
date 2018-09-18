@@ -32,6 +32,9 @@ def plot_grid_images_file(images, columns=1, titles=None, filename=None):
 
         ax = fig.add_subplot(rows, columns, n + 1)
 
+        if image.shape[0] == 1:
+            image = np.squeeze(image)
+
         if image.ndim == 2:
             plt.gray()
 

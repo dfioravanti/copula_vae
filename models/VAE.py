@@ -83,7 +83,7 @@ class VAE(BaseVAE):
                       verbose=True,
                       early_stopping_tolerance=10):
 
-        best_loss = - math.inf
+        best_loss = math.inf
         early_stopping_strikes = 0
 
         for epoch in range(epochs):

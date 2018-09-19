@@ -33,9 +33,9 @@ class BaseVAE(nn.Module):
     def sampling_normal_with_reparametrization(self, mean, log_variance):
 
         zero_one_normal = torch.randn(self.number_latent_variables, dtype=log_variance.dtype).to(self.device)
-        variance = log_variance.mul(0.5).exp()
+        variance = log_variance.exp()
 
-        return zero_one_normal.mul(variance).add(mean)
+        return zero_one_normal.add(mean).mul(variance)
 
     def train_epoch(self,
                     epoch,

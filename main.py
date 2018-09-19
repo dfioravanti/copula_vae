@@ -7,6 +7,8 @@ from loaders import load_funtions
 from models.VAE import VAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 
+import numpy as np
+
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import Adam
@@ -77,6 +79,7 @@ args.device = torch.device("cuda:0") if args.cuda else torch.device("cpu")
 
 random.seed(args.seed)
 torch.manual_seed(args.seed)
+np.random.seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 

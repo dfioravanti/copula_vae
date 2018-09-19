@@ -28,11 +28,14 @@ parser.add_argument('--warmup', type=int, default=100, metavar='WU',
                     help='number of epochs for warmu-up')
 
 # cuda
-parser.add_argument('--no-cuda', action='store_true', default=True,
+parser.add_argument('--cuda', action='store_true', default=True,
                     help='enables CUDA training')
 
+parser.add_argument('--verbose', action='store_true', default=True,
+                    help='enables verbose behaviour')
+
 # random seed
-parser.add_argument('--seed', type=int, default=42, metavar='S',
+parser.add_argument('--seed', type=int, default=77, metavar='S',
                     help='random seed (default: 42)')
 
 # model
@@ -62,7 +65,13 @@ parser.add_argument('--output_dir', type=str, default='./outputs',
 args = parser.parse_args()
 
 args.output_dir = pathlib.Path(args.output_dir)
-args.cuda = args.no_cuda and torch.cuda.is_available()
+args.cuda = args.cuda and torch.cuda.is_available()
+
+if args.verbose:
+    print(f'Cuda is {args.cuda}')
+
+if args.warmup == 0:
+    args.warmup = None
 
 args.device = torch.device("cuda:0") if args.cuda else torch.device("cpu")
 
@@ -78,7 +87,7 @@ def main(args):
                                                                              batch_size=args.batch_size)
 
     if args.prior == 'standard':
-        model = VAE(number_latent_variables=40,
+        model = VAE(number_latent_variables=args.z_size,
                     input_shape=input_shape,
                     encoder_output_size=300,
                     output_dir=args.output_dir,
@@ -86,13 +95,13 @@ def main(args):
 
     model = model.to(args.device)
 
-    model.train_dataset(train_loader,
-                        validation_loader,
-                        optimizer=Adam(model.parameters()),
-                        epochs=50,
-                        warmup=10,
-                        verbose=True,
-                        early_stopping_tolerance=10)
+    model.train_on_dataset(train_loader,
+                           validation_loader,
+                           optimizer=Adam(model.parameters(), lr=args.lr),
+                           epochs=args.epochs,
+                           warmup=args.warmup,
+                           verbose=args.verbose,
+                           early_stopping_tolerance=args.early_stopping_epochs)
 
     print('Done')
 

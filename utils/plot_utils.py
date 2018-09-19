@@ -46,3 +46,6 @@ def plot_grid_images_file(images, columns=1, titles=None, filename=None):
         plt.show()
     else:
         plt.savefig(f'{filename}.png', bbox_inches='tight')
+
+    plt.clf()
+    plt.close()

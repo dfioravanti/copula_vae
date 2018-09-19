@@ -35,7 +35,7 @@ class BaseVAE(nn.Module):
         zero_one_normal = torch.randn(self.number_latent_variables, dtype=log_variance.dtype).to(self.device)
         variance = log_variance.exp()
 
-        return zero_one_normal.add(mean).mul(variance)
+        return zero_one_normal.mul(variance).add(mean)
 
     def train_epoch(self,
                     epoch,

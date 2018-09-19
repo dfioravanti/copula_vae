@@ -46,7 +46,9 @@ class BaseVAE(nn.Module):
 
         self.train()
 
-        batch_losses = batch_REs = batch_KLs = np.zeros(len(loader))
+        batch_losses = np.zeros(len(loader))
+        batch_REs = np.zeros_like(batch_losses)
+        batch_KLs = np.zeros_like(batch_losses)
 
         beta = self._compute_beta(epoch, warmup)
 
@@ -82,9 +84,11 @@ class BaseVAE(nn.Module):
 
         self.eval()
 
-        beta = self._compute_beta(epoch, warmup)
+        batch_losses = np.zeros(len(loader))
+        batch_REs = np.zeros_like(batch_losses)
+        batch_KLs = np.zeros_like(batch_losses)
 
-        batch_losses = batch_REs = batch_KLs = np.zeros(len(loader))
+        beta = self._compute_beta(epoch, warmup)
 
         for batch_idx, (xs, _) in enumerate(loader):
 
@@ -115,7 +119,9 @@ class BaseVAE(nn.Module):
                              xs,
                              epoch):
 
-        xs_reconstructed, _, _ = self.forward(xs)
+        xs_reconstructed, mean, log_variance = self.forward(xs)
+
+        print(f'mean: {(mean.mean())} and log_var: {log_variance.mean()}')
 
         xs_reconstructed = xs_reconstructed.view((-1,) + self.input_shape)
 

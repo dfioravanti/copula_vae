@@ -49,6 +49,12 @@ class VAE(BaseVAE):
             nn.Sigmoid()
         )
 
+        # weights initialization
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.kaiming_normal_(m.weight)
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, x):
         mean_z_x, log_var_z_x = self.q_z(x)
         z_x = self.sampling_normal_with_reparametrization(mean_z_x, log_var_z_x)
@@ -65,6 +71,7 @@ class VAE(BaseVAE):
 
     def p_x(self, z):
         z = self.p_x_layers(z)
+
         return self.output_decoder(z)
 
     def calculate_loss(self, xs, beta=1, loss=nn.L1Loss()):
@@ -75,14 +82,14 @@ class VAE(BaseVAE):
 
         return RE + beta * KL, RE, KL
 
-    def train_dataset(self,
-                      loader_train,
-                      loader_validation,
-                      optimizer,
-                      epochs=50,
-                      warmup=None,
-                      verbose=True,
-                      early_stopping_tolerance=10):
+    def train_on_dataset(self,
+                         loader_train,
+                         loader_validation,
+                         optimizer,
+                         epochs=50,
+                         warmup=None,
+                         verbose=True,
+                         early_stopping_tolerance=10):
 
         best_loss = math.inf
         early_stopping_strikes = 0

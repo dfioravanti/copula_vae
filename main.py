@@ -39,7 +39,7 @@ parser.add_argument('--seed', type=int, default=77, metavar='S',
                     help='random seed (default: 42)')
 
 # model
-parser.add_argument('--z_size', type=int, default=40, metavar='M1',
+parser.add_argument('--z_size', type=int, default=20, metavar='M1',
                     help='latent space size (default: 40)')
 
 parser.add_argument('--prior', type=str, default='standard', metavar='P',

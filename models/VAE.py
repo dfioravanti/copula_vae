@@ -5,6 +5,7 @@ import math
 import numpy as np
 import torch
 from torch import nn
+from utils.nn import GatedDense
 
 
 class VAE(BaseVAE):
@@ -15,6 +16,7 @@ class VAE(BaseVAE):
                  encoder_output_size=300,
                  output_dir=None,
                  device=torch.device("cpu")):
+
         super(VAE, self).__init__(number_latent_variables=number_latent_variables,
                                   input_shape=input_shape,
                                   output_dir=output_dir,
@@ -25,22 +27,21 @@ class VAE(BaseVAE):
         # Encoder q(z|x)
 
         self.q_z_layers = nn.Sequential(
-            nn.Linear(np.prod(self.input_shape), 300),
-            nn.ReLU(),
-            nn.Linear(300, self.encoder_output_size),
-            nn.ReLU()
+            GatedDense(np.prod(self.input_shape), 300),
+            GatedDense(300, self.encoder_output_size)
         )
 
         self.mean = nn.Linear(self.encoder_output_size, self.number_latent_variables)
-        self.log_var = nn.Linear(self.encoder_output_size, self.number_latent_variables)
+        self.log_var = nn.Sequential(
+            nn.Linear(self.encoder_output_size, self.number_latent_variables),
+            nn.Hardtanh(min_val=-6, max_val=2)
+        )
 
         # Decoder p(x|z)
 
         self.p_x_layers = nn.Sequential(
-            nn.Linear(self.number_latent_variables, 300),
-            nn.ReLU(),
-            nn.Linear(300, 300),
-            nn.ReLU()
+            GatedDense(self.number_latent_variables, 300),
+            GatedDense(300, 300)
         )
 
         self.output_decoder = nn.Sequential(

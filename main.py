@@ -17,8 +17,6 @@ parser = argparse.ArgumentParser(description='VAE')
 # arguments for optimization
 parser.add_argument('--batch_size', type=int, default=100, metavar='BStrain',
                     help='input batch size for training (default: 100)')
-parser.add_argument('--test_batch_size', type=int, default=100, metavar='BStest',
-                    help='input batch size for testing (default: 100)')
 parser.add_argument('--epochs', type=int, default=2000, metavar='E',
                     help='number of epochs to train (default: 2000)')
 parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
@@ -76,7 +74,8 @@ if args.cuda:
 
 def main(args):
 
-    train_loader, validation_loader, test_loader, input_shape = load_dataset(args.dataset_name)
+    train_loader, validation_loader, test_loader, input_shape = load_dataset(dataset_name=args.dataset_name,
+                                                                             batch_size=args.batch_size)
 
     if args.prior == 'standard':
         model = VAE(number_latent_variables=40,

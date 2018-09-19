@@ -25,15 +25,14 @@ def plot_grid_images_file(images, columns=1, titles=None, filename=None):
     if titles is None:
         titles = [f'Image ({i})' for i in range(1, number_images + 1)]
 
+    images = np.squeeze(images)
+
     fig = plt.figure()
     rows = np.ceil(number_images / columns)
 
     for n, (image, title) in enumerate(zip(images, titles)):
 
         ax = fig.add_subplot(rows, columns, n + 1)
-
-        if image.shape[0] == 1:
-            image = np.squeeze(image)
 
         if image.ndim == 2:
             plt.gray()

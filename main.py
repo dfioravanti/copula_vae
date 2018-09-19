@@ -3,6 +3,7 @@ import random
 import pathlib
 
 from loaders import load_funtions
+from utils.training import train_on_dataset
 
 from models.VAE import VAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
@@ -10,7 +11,7 @@ from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 import numpy as np
 
 import torch
-from torch.utils.data import DataLoader
+import torch.nn as nn
 from torch.optim import Adam
 
 # Training settings
@@ -21,8 +22,8 @@ parser.add_argument('--batch_size', type=int, default=100, metavar='BStrain',
                     help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=2000, metavar='E',
                     help='number of epochs to train (default: 2000)')
-parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
-                    help='learning rate (default: 0.0005)')
+parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+                    help='learning rate (default: 0.001)')
 parser.add_argument('--early_stopping_epochs', type=int, default=50, metavar='ES',
                     help='number of epochs for early stopping')
 
@@ -37,11 +38,11 @@ parser.add_argument('--verbose', action='store_true', default=True,
                     help='enables verbose behaviour')
 
 # random seed
-parser.add_argument('--seed', type=int, default=77, metavar='S',
+parser.add_argument('--seed', type=int, default=42, metavar='S',
                     help='random seed (default: 42)')
 
 # model
-parser.add_argument('--z_size', type=int, default=20, metavar='M1',
+parser.add_argument('--z_size', type=int, default=40, metavar='M1',
                     help='latent space size (default: 40)')
 
 parser.add_argument('--prior', type=str, default='standard', metavar='P',
@@ -67,6 +68,8 @@ parser.add_argument('--output_dir', type=str, default='./outputs',
 args = parser.parse_args()
 
 args.output_dir = pathlib.Path(args.output_dir)
+args.output_dir.mkdir(parents=True, exist_ok=True)
+
 args.cuda = args.cuda and torch.cuda.is_available()
 
 if args.verbose:
@@ -93,18 +96,21 @@ def main(args):
         model = VAE(number_latent_variables=args.z_size,
                     input_shape=input_shape,
                     encoder_output_size=300,
-                    output_dir=args.output_dir,
                     device=args.device)
 
     model = model.to(args.device)
 
-    model.train_on_dataset(train_loader,
-                           validation_loader,
-                           optimizer=Adam(model.parameters(), lr=args.lr),
-                           epochs=args.epochs,
-                           warmup=args.warmup,
-                           verbose=args.verbose,
-                           early_stopping_tolerance=args.early_stopping_epochs)
+    train_on_dataset(model=model,
+                     loader_train=train_loader,
+                     loader_validation=validation_loader,
+                     optimizer=Adam(model.parameters(), lr=args.lr),
+                     loss=nn.L1Loss(),
+                     epochs=args.epochs,
+                     warmup=args.warmup,
+                     verbose=args.verbose,
+                     early_stopping_tolerance=args.early_stopping_epochs,
+                     device=args.device,
+                     output_dir=args.output_dir)
 
     print('Done')
 

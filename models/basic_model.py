@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from utils.plot_utils import plot_grid_images_file
+
 
 
 class BaseVAE(nn.Module):
@@ -16,15 +16,9 @@ class BaseVAE(nn.Module):
     def __init__(self,
                  number_latent_variables,
                  input_shape,
-                 output_dir=None,
                  device=torch.device("cpu")):
 
         super(BaseVAE, self).__init__()
-
-        self.output_dir = output_dir
-
-        if self.output_dir is not None:
-            self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.number_latent_variables = number_latent_variables
         self.input_shape = input_shape
@@ -36,100 +30,6 @@ class BaseVAE(nn.Module):
         variance = log_variance.exp()
 
         return zero_one_normal.mul(variance).add(mean)
-
-    def train_epoch(self,
-                    epoch,
-                    loader,
-                    optimizer,
-                    warmup=None,
-                    verbose=True):
-
-        self.train()
-
-        batch_losses = np.zeros(len(loader))
-        batch_REs = np.zeros_like(batch_losses)
-        batch_KLs = np.zeros_like(batch_losses)
-
-        beta = self._compute_beta(epoch, warmup)
-
-        if verbose:
-            print(f'Training with beta = {beta}')
-
-        for batch_idx, (xs, _) in enumerate(loader):
-
-            xs = xs.view(loader.batch_size, -1).to(self.device)
-
-            if batch_idx == 0 and self.output_dir is not None:
-                self._plot_reconstruction(xs, epoch)
-
-            optimizer.zero_grad()
-            loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
-            loss.backward()
-            optimizer.step()
-
-            batch_losses[batch_idx] = loss
-            batch_REs[batch_idx] = reconstruction_error
-            batch_KLs[batch_idx] = KL
-
-        epoch_loss = np.average(batch_losses)
-        epoch_RE = np.average(batch_REs)
-        epoch_KLs = np.average(batch_KLs)
-
-        return epoch_loss, epoch_RE, epoch_KLs
-
-    def validation_epoch(self,
-                         epoch,
-                         loader,
-                         warmup=None):
-
-        self.eval()
-
-        batch_losses = np.zeros(len(loader))
-        batch_REs = np.zeros_like(batch_losses)
-        batch_KLs = np.zeros_like(batch_losses)
-
-        beta = self._compute_beta(epoch, warmup)
-
-        for batch_idx, (xs, _) in enumerate(loader):
-
-            xs = xs.view(loader.batch_size, -1).to(self.device)
-
-            loss, reconstruction_error, KL = self.calculate_loss(xs, beta)
-
-            batch_losses[batch_idx] = loss
-            batch_REs[batch_idx] = reconstruction_error
-            batch_KLs[batch_idx] = KL
-
-        val_loss = np.average(batch_losses)
-        val_RE = np.average(batch_REs)
-        val_KLs = np.average(batch_KLs)
-
-        return val_loss, val_RE, val_KLs
-
-    def _compute_beta(self, epoch, warmup):
-
-        if warmup is None:
-            beta = 1
-        else:
-            beta = min(epoch/warmup, 1)
-
-        return beta
-
-    def _plot_reconstruction(self,
-                             xs,
-                             epoch):
-
-        xs_reconstructed, mean, log_variance = self.forward(xs)
-
-        print(f'mean: {(mean.mean())} and log_var: {log_variance.mean()}')
-
-        xs_reconstructed = xs_reconstructed.view((-1,) + self.input_shape)
-
-        filename = self.output_dir / f'Epoch {epoch}'
-
-        plot_grid_images_file(xs_reconstructed.to('cpu').detach().numpy()[0:10, :],
-                              columns=5,
-                              filename=filename)
 
     @abc.abstractmethod
     def calculate_loss(self, xs, beta=1, loss=nn.MSELoss()):

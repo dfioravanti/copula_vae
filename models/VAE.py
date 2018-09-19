@@ -14,12 +14,10 @@ class VAE(BaseVAE):
                  number_latent_variables,
                  input_shape,
                  encoder_output_size=300,
-                 output_dir=None,
                  device=torch.device("cpu")):
 
         super(VAE, self).__init__(number_latent_variables=number_latent_variables,
                                   input_shape=input_shape,
-                                  output_dir=output_dir,
                                   device=device)
 
         self.encoder_output_size = encoder_output_size
@@ -74,47 +72,3 @@ class VAE(BaseVAE):
 
         return self.output_decoder(z)
 
-    def calculate_loss(self, xs, beta=1, loss=nn.L1Loss()):
-        xs_recontructed, mean_z_x, log_var_z_x = self.forward(xs)
-
-        RE = loss(xs_recontructed, xs)
-        KL = torch.mean(-0.5 * torch.sum(1 + log_var_z_x - mean_z_x.pow(2) - log_var_z_x.exp()))
-
-        return RE + beta * KL, RE, KL
-
-    def train_on_dataset(self,
-                         loader_train,
-                         loader_validation,
-                         optimizer,
-                         epochs=50,
-                         warmup=None,
-                         verbose=True,
-                         early_stopping_tolerance=10):
-
-        best_loss = math.inf
-        early_stopping_strikes = 0
-
-        for epoch in range(epochs):
-
-            epoch_train_loss, epoch_train_RE, epoch_train_KLs = self.train_epoch(loader=loader_train,
-                                                                                 optimizer=optimizer,
-                                                                                 epoch=epoch,
-                                                                                 warmup=warmup,
-                                                                                 verbose=verbose)
-
-            epoch_val_loss, epoch_val_RE, epoch_val_KLs = self.validation_epoch(epoch=epoch,
-                                                                                loader=loader_validation)
-
-            if verbose:
-                print(f'epoch: {epoch}/{epochs} => train loss: {epoch_train_loss} and val loss: {epoch_val_loss}')
-
-            if epoch_val_loss < best_loss:
-
-                early_stopping_strikes = 0
-                best_loss = epoch_val_loss
-
-            elif warmup is not None and epoch > warmup:
-
-                early_stopping_strikes += 1
-                if early_stopping_strikes >= early_stopping_tolerance:
-                    break

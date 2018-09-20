@@ -43,7 +43,7 @@ def load_binary_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None
     return train_loader, test_loader, valid_loader
 
 
-def load_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True, random_seed=42):
+def load_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
 
     if root_dir is None:
         root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
@@ -62,7 +62,6 @@ def load_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, downl
     split = int(np.floor(0.2 * size_train))
 
     if shuffle:
-        np.random.seed(random_seed)
         np.random.shuffle(indices)
 
     train_idx, valid_idx = indices[split:], indices[:split]

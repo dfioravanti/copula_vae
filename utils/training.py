@@ -28,7 +28,8 @@ def train_epoch(model,
         xs_reconstructed, mean_z_x, log_var_z_x = model(xs)
 
         if batch_idx == 0 and output_dir is not None:
-            plot_reconstruction(xs_reconstructed[0:10],
+            print(f'plotting')
+            plot_reconstruction(xs_reconstructed[:10],
                                 model.input_shape,
                                 epoch,
                                 output_dir)

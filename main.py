@@ -78,7 +78,7 @@ if args.verbose:
 if args.warmup == 0:
     args.warmup = None
 
-args.device = torch.device("cuda:0") if args.cuda else torch.device("cpu")
+args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 random.seed(args.seed)
 torch.manual_seed(args.seed)
@@ -99,6 +99,9 @@ def main(args):
                     device=args.device)
 
     model = model.to(args.device)
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        model = nn.DataParallel(model)
 
     train_on_dataset(model=model,
                      loader_train=train_loader,

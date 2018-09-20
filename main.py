@@ -98,13 +98,6 @@ def main(args):
                     encoder_output_size=300,
                     device=args.device)
 
-    if args.cuda and args.verbose:
-        print(f'I see {torch.cuda.device_count()} GPUs')
-
-    if torch.cuda.device_count() > 1:
-        print(f"Let's use {torch.cuda.device_count()} GPUs!")
-        model = nn.DataParallel(model)
-
     model = model.to(args.device)
 
     train_on_dataset(model=model,

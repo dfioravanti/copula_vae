@@ -4,6 +4,7 @@ import pathlib
 
 from loaders import load_funtions
 from utils.training import train_on_dataset
+from utils.parsing import choose_loss_function
 
 from models.VAE import VAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
@@ -49,6 +50,8 @@ parser.add_argument('--prior', type=str, default='standard', metavar='P',
                     help='prior: standard, gaussian_copula')
 
 # experiment
+parser.add_argument('--loss', type=str, default='L2',
+                    help='loss function to be used: L1, L2, BCE')
 parser.add_argument('--S', type=int, default=5000, metavar='SLL',
                     help='number of samples used for approximating log-likelihood')
 parser.add_argument('--MB', type=int, default=100, metavar='MBLL',
@@ -66,14 +69,16 @@ parser.add_argument('--output_dir', type=str, default='./outputs',
                     help='Location of the output directory')
 
 args = parser.parse_args()
-
-args.output_dir = pathlib.Path(args.output_dir)
-args.output_dir.mkdir(parents=True, exist_ok=True)
-
 args.cuda = args.cuda and torch.cuda.is_available()
 
 if args.verbose:
     print(f'Cuda is {args.cuda}')
+    print(f'Using as loss function: {args.loss}')
+
+args.loss = choose_loss_function(args.loss)
+args.output_dir = pathlib.Path(args.output_dir)
+args.output_dir.mkdir(parents=True, exist_ok=True)
+
 
 if args.warmup == 0:
     args.warmup = None
@@ -104,7 +109,7 @@ def main(args):
                      loader_train=train_loader,
                      loader_validation=validation_loader,
                      optimizer=Adam(model.parameters(), lr=args.lr),
-                     loss=nn.MSELoss(),
+                     loss=args.loss,
                      epochs=args.epochs,
                      warmup=args.warmup,
                      verbose=args.verbose,

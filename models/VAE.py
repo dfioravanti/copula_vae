@@ -1,7 +1,5 @@
 from models.basic_model import BaseVAE
 
-import math
-
 import numpy as np
 import torch
 from torch import nn

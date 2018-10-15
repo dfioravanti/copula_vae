@@ -1,0 +1,126 @@
+import numpy as np
+from numpy.random import uniform
+from scipy.stats import levy_stable
+from scipy import stats
+
+
+def partition(number, classes):
+
+    sizes = np.zeros(classes, dtype=np.int)
+
+    sizes[:] = number // classes
+
+    for i in range(number % classes):
+        sizes[i] += 1
+
+    return sizes
+
+
+def psi_theta(psi, theta):
+    return lambda t: psi(t, theta)
+
+
+def psi_gumbel(t, theta):
+    return np.exp(-t ** (1/theta))
+
+
+def marshall_olkin_sampling(psi_theta, F, d):
+    v = F.rvs(size=1)
+    xs = uniform(size=d)
+
+    return psi_theta(-np.log(xs) / v)
+
+
+def sampling_from_gumbel_copula(theta, d):
+    F = levy_stable(1/theta, 1, 0, (np.cos(np.pi/(2*theta)) ** theta))
+    psi = psi_theta(psi_gumbel, theta)
+    return marshall_olkin_sampling(psi, F, d)
+
+
+def sampling_from_gumbel_partially_nested_copula(d, s, thetas):
+
+    if not np.all(thetas >= 1):
+        raise ValueError("All the thetas must be bigger than one")
+
+    if not np.all(np.diff(thetas) >= 0):
+        raise ValueError("Thetas must be increasing")
+
+    if not len(thetas) == s+1:
+        raise ValueError("Length of thetas must be equas to s+1")
+
+    sizes = partition(d, s)
+    xs = np.zeros(d)
+
+    psi_0 = psi_theta(psi_gumbel, thetas[0])
+
+    v_0 = levy_stable(1 / thetas[0], 1, 0, (np.cos(np.pi / (2 * thetas[0])) ** thetas[0])).rvs(size=1)
+
+    used_elemets = 0
+
+    for i in range(1, s+1):
+
+        future_used_elements = used_elemets + sizes[i-1]
+
+        theta_i = thetas[i] / thetas[0]
+        xs[used_elemets:future_used_elements] = sampling_from_gumbel_copula(theta_i, sizes[i-1])
+
+        used_elemets = future_used_elements
+
+    return psi_0(-np.log(xs) / v_0)
+
+
+def sampling_from_gausiann_copula(covariance_matrix, size):
+
+    d = covariance_matrix.shape[0]
+    zs = np.random.normal(size=(size, d))
+
+    A = np.linalg.cholesky(covariance_matrix).T
+
+    xs = zs @ A
+    return stats.norm.cdf(xs)
+
+
+if __name__ == '__main__':
+
+    import matplotlib
+
+    matplotlib.use('TkAgg')
+    import seaborn as sns
+    import pandas as pd
+
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+
+    np.random.seed(123)
+    n = 200
+
+    cov = np.matrix([[1, 0, 0.9],
+                    [0, 1, 0],
+                    [0.9, 0, 1]]
+                    )
+
+    #cov = np.eye(3)
+
+    xs = sampling_from_gausiann_copula(cov, n)
+    zs = np.zeros_like(xs)
+
+#    fig = plt.figure()
+ #   ax = fig.gca(projection='3d')
+
+    f = g = h = stats.norm(0, 1)
+    g = stats.poisson(1)
+    h = stats.bernoulli(0.5)
+
+    zs[:, 0], zs[:, 1], zs[:, 2] = f.ppf(xs[:, 0]), g.ppf(xs[:, 1]), h.ppf(xs[:, 2])
+
+    #ax.scatter(xs[:, 0], xs[:, 1], xs[:, 2], color='blue')
+    #ts[:, 0], ts[:, 1], ts[:, 2] = f.ppf(xs[:, 0]), g.ppf(xs[:, 1]), h.ppf(xs[:, 2])
+    #ax.scatter(ts[:, 0], ts[:, 1], ts[:, 2], color='red')
+
+
+
+    #
+
+    df = pd.DataFrame(zs)
+    sns.pairplot(df)
+    plt.show()

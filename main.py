@@ -7,6 +7,7 @@ from utils.training import train_on_dataset
 from utils.parsing import choose_loss_function
 
 from models.VAE import VAE
+from models.copula_VAE import CopulaVAEWithNormals
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 
 import numpy as np
@@ -46,7 +47,7 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
 parser.add_argument('--z_size', type=int, default=40, metavar='M1',
                     help='latent space size (default: 40)')
 
-parser.add_argument('--prior', type=str, default='standard', metavar='P',
+parser.add_argument('--prior', type=str, default='gaussian_copula', metavar='P',
                     help='prior: standard, gaussian_copula')
 
 # experiment
@@ -102,6 +103,12 @@ def main(args):
                     input_shape=input_shape,
                     encoder_output_size=300,
                     device=args.device)
+
+    if args.prior == 'gaussian_copula':
+        model = CopulaVAEWithNormals(number_latent_variables=args.z_size,
+                                     input_shape=input_shape,
+                                     encoder_output_size=300,
+                                     device=args.device)
 
     model = model.to(args.device)
 

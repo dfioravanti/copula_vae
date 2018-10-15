@@ -75,6 +75,7 @@ args.cuda = args.cuda and torch.cuda.is_available()
 if args.verbose:
     print(f'Cuda is {args.cuda}')
     print(f'Using as loss function: {args.loss}')
+    print(f'Using {args.prior} as prior')
 
 args.loss = choose_loss_function(args.loss)
 args.output_dir = pathlib.Path(args.output_dir)

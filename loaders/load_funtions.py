@@ -69,11 +69,11 @@ def load_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, downl
     valid_sampler = data_utils.SubsetRandomSampler(valid_idx)
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, sampler=train_sampler
+        train_dataset, batch_size=batch_size, sampler=train_sampler, shuffle=shuffle
     )
 
     valid_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=batch_size, sampler=valid_sampler
+        valid_dataset, batch_size=batch_size, sampler=valid_sampler, shuffle=shuffle
     )
 
     test_loader = torch.utils.data.DataLoader(

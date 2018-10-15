@@ -104,7 +104,7 @@ def main(args):
                      loader_train=train_loader,
                      loader_validation=validation_loader,
                      optimizer=Adam(model.parameters(), lr=args.lr),
-                     loss=nn.L1Loss(),
+                     loss=nn.MSELoss(),
                      epochs=args.epochs,
                      warmup=args.warmup,
                      verbose=args.verbose,
@@ -124,7 +124,7 @@ def load_dataset(dataset_name, batch_size=50):
 
     elif dataset_name == 'mnist':
 
-        train_loader, test_loader, validation_loader = load_funtions.load_MNIST(batch_size=batch_size)
+        train_loader, test_loader, validation_loader = load_funtions.load_MNIST(batch_size=batch_size, shuffle=False)
         input_shape = (1, 28, 28)
 
     else:

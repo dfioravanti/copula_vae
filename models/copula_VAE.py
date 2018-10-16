@@ -8,7 +8,7 @@ from torch import nn
 
 from utils.nn import GatedDense
 from utils import copula_sampling
-from utils.distributions import gaussian_icdf
+from utils.distributions import gaussian_icdf, log_normal_standard, log_normal_by_component
 
 
 class CopulaVAEWithNormals(BaseVAE):
@@ -58,7 +58,7 @@ class CopulaVAEWithNormals(BaseVAE):
 
     def forward(self, x):
         mean_z_x, log_var_z_x = self.q_z(x)
-        z_x = self.sampling_copula_with_normal_inverse(mean_z_x, log_var_z_x, self.number_latent_variables)
+        z_x = sampling_copula_with_normal_inverse(mean_z_x, log_var_z_x, self.number_latent_variables)
 
         # x_mean = p(x|z)
         x_recontructed = self.p_x(z_x)
@@ -75,18 +75,23 @@ class CopulaVAEWithNormals(BaseVAE):
 
         return self.output_decoder(z)
 
-    def sampling_copula_with_normal_inverse(self, means, log_vars, number_latent_variables):
 
-        cov = np.eye(number_latent_variables)
-        xs = torch.FloatTensor(copula_sampling.sampling_from_gausiann_copula(cov, 1))
+def sampling_copula_with_normal_inverse(means, log_vars, number_latent_variables, size=1):
 
-        if torch.cuda.is_available():
-            xs = xs.to(means.get_device())
+    cov = np.eye(number_latent_variables)
+    xs = torch.FloatTensor(copula_sampling.sampling_from_gausiann_copula(cov, size))
 
-        return gaussian_icdf(means, log_vars, xs)
+    if torch.cuda.is_available():
+        xs = xs.to(means.get_device())
 
-    def compute_KL(self):
+    return gaussian_icdf(means, log_vars, xs)
 
-        "TODO: Extimate the KL with MC methods"
 
-        pass
+def compute_KL(means, log_vars, number_latent_variables, number_samples_kl):
+
+    zs = sampling_copula_with_normal_inverse(means, log_vars, number_latent_variables, number_samples_kl)
+
+    log_ps = log_normal_standard(zs)
+    log_qs = log_normal_by_component(zs, means, log_vars)
+
+    return torch.mean(log_ps - log_qs)

@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from utils.plot_utils import plot_grid_images_file
+from models.copula_VAE import compute_KL
 
 
 def train_epoch(model,
@@ -46,7 +47,9 @@ def train_epoch(model,
                                                         loss_function=loss_function,
                                                         beta=beta,
                                                         mean_z_x=mean_z_x,
-                                                        log_var_z_x=log_var_z_x)
+                                                        log_var_z_x=log_var_z_x,
+                                                        number_latent_variables=model.number_latent_variables,
+                                                        number_samples_kl=1)
         loss.backward()
         optimizer.step()
 
@@ -81,7 +84,9 @@ def validation_epoch(model,
                                                         loss_function=loss_function,
                                                         beta=beta,
                                                         mean_z_x=mean_z_x,
-                                                        log_var_z_x=log_var_z_x)
+                                                        log_var_z_x=log_var_z_x,
+                                                        number_latent_variables=model.number_latent_variables,
+                                                        number_samples_kl=1)
 
         batch_losses[batch_idx] = loss
         batch_REs[batch_idx] = reconstruction_error
@@ -116,9 +121,11 @@ def plot_reconstruction(xs_reconstructed,
                           filename=filename)
 
 
-def calculate_loss(xs, xs_reconstructed, loss_function, beta, mean_z_x, log_var_z_x):
+def calculate_loss(xs, xs_reconstructed, loss_function, beta,
+                   mean_z_x, log_var_z_x, number_latent_variables, number_samples_kl):
+
     RE = loss_function(xs, xs_reconstructed)
-    KL = torch.mean(-0.5 * torch.sum(1 + log_var_z_x - mean_z_x.pow(2) - log_var_z_x.exp()))
+    KL = compute_KL(mean_z_x, log_var_z_x, number_latent_variables, number_samples_kl)
 
     return RE + beta * KL, RE, KL
 

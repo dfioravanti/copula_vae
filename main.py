@@ -20,7 +20,7 @@ from torch.optim import Adam
 parser = argparse.ArgumentParser(description='VAE')
 
 # arguments for optimization
-parser.add_argument('--batch_size', type=int, default=16, metavar='BStrain',
+parser.add_argument('--batch_size', type=int, default=100, metavar='BStrain',
                     help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=2000, metavar='E',
                     help='number of epochs to train (default: 2000)')
@@ -59,9 +59,9 @@ parser.add_argument('--MB', type=int, default=100, metavar='MBLL',
                     help='size of a mini-batch used for approximating log-likelihood')
 
 # dataset
-parser.add_argument('--dataset_name', type=str, default='omniglot', metavar='DN',
+parser.add_argument('--dataset_name', type=str, default='cifar10', metavar='DN',
                     help='name of the dataset: binary_mnist, mnist, bedrooms,'
-                         ' omniglot, caltech101silhouettes, histopathologyGray, freyfaces, cifar10')
+                         ' omniglot, cifar10')
 
 parser.add_argument('--dynamic_binarization', action='store_true', default=False,
                     help='allow dynamic binarization')
@@ -148,6 +148,11 @@ def load_dataset(dataset_name, batch_size=50):
 
         train_loader, test_loader, validation_loader = load_funtions.load_omniglot(batch_size=batch_size, shuffle=False)
         input_shape = (1, 105, 105)
+
+    elif dataset_name == 'cifar10':
+
+        train_loader, test_loader, validation_loader = load_funtions.load_cifar10(batch_size=batch_size, shuffle=False)
+        input_shape = (3, 32, 32)
 
     elif dataset_name == 'bedrooms':
 

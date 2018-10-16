@@ -36,6 +36,8 @@ def plot_grid_images_file(images, columns=1, titles=None, filename=None):
 
         if image.ndim == 2:
             plt.gray()
+        else:
+            image = np.moveaxis(image, 0, -1)
 
         ax.imshow(image)
         ax.set_title(title)

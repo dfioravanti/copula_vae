@@ -81,7 +81,7 @@ class CopulaVAEWithNormals(BaseVAE):
         xs = torch.FloatTensor(copula_sampling.sampling_from_gausiann_copula(cov, 1))
 
         if torch.cuda.is_available():
-            xs.to(means.get_device())
+            xs = xs.to(means.get_device())
 
         return gaussian_icdf(means, log_vars, xs)
 

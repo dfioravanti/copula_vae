@@ -111,6 +111,10 @@ def main(args):
                                      encoder_output_size=300,
                                      device=args.device)
 
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        model = nn.DataParallel(model)
+
     model = model.to(args.device)
 
     train_on_dataset(model=model,

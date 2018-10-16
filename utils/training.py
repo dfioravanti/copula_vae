@@ -22,6 +22,13 @@ def train_epoch(model,
     batch_REs = np.zeros_like(batch_losses)
     batch_KLs = np.zeros_like(batch_losses)
 
+    if isinstance(model, nn.DataParallel):
+        input_shape = model.module.input_shape
+        number_latent_variables = model.module.number_latent_variables
+    else:
+        input_shape = model.input_shape
+        number_latent_variables = model.number_latent_variables
+
     for batch_idx, (xs, _) in enumerate(loader):
 
         optimizer.zero_grad()
@@ -31,11 +38,6 @@ def train_epoch(model,
 
         if batch_idx == 0 and output_dir is not None:
             print(f'plotting')
-
-            if isinstance(model, nn.DataParallel):
-                input_shape = model.module.input_shape
-            else:
-                input_shape = model.input_shape
 
             plot_reconstruction(xs_reconstructed[:10],
                                 input_shape,
@@ -48,7 +50,7 @@ def train_epoch(model,
                                                         beta=beta,
                                                         mean_z_x=mean_z_x,
                                                         log_var_z_x=log_var_z_x,
-                                                        number_latent_variables=model.number_latent_variables,
+                                                        number_latent_variables=number_latent_variables,
                                                         number_samples_kl=1)
         loss.backward()
         optimizer.step()
@@ -75,6 +77,11 @@ def validation_epoch(model,
     batch_REs = np.zeros_like(batch_losses)
     batch_KLs = np.zeros_like(batch_losses)
 
+    if isinstance(model, nn.DataParallel):
+        number_latent_variables = model.module.number_latent_variables
+    else:
+        number_latent_variables = model.number_latent_variables
+
     for batch_idx, (xs, _) in enumerate(loader):
         xs = xs.view(loader.batch_size, -1).to(device)
         xs_reconstructed, mean_z_x, log_var_z_x = model(xs)
@@ -85,7 +92,7 @@ def validation_epoch(model,
                                                         beta=beta,
                                                         mean_z_x=mean_z_x,
                                                         log_var_z_x=log_var_z_x,
-                                                        number_latent_variables=model.number_latent_variables,
+                                                        number_latent_variables=number_latent_variables,
                                                         number_samples_kl=1)
 
         batch_losses[batch_idx] = loss

@@ -59,8 +59,8 @@ parser.add_argument('--MB', type=int, default=100, metavar='MBLL',
                     help='size of a mini-batch used for approximating log-likelihood')
 
 # dataset
-parser.add_argument('--dataset_name', type=str, default='mnist', metavar='DN',
-                    help='name of the dataset: binary_mnist, mnist,'
+parser.add_argument('--dataset_name', type=str, default='omniglot', metavar='DN',
+                    help='name of the dataset: binary_mnist, mnist, bedrooms,'
                          ' omniglot, caltech101silhouettes, histopathologyGray, freyfaces, cifar10')
 
 parser.add_argument('--dynamic_binarization', action='store_true', default=False,
@@ -143,6 +143,16 @@ def load_dataset(dataset_name, batch_size=50):
 
         train_loader, test_loader, validation_loader = load_funtions.load_MNIST(batch_size=batch_size, shuffle=False)
         input_shape = (1, 28, 28)
+
+    elif dataset_name == 'omniglot':
+
+        train_loader, test_loader, validation_loader = load_funtions.load_omniglot(batch_size=batch_size, shuffle=False)
+        input_shape = (1, 105, 105)
+
+    elif dataset_name == 'bedrooms':
+
+        train_loader, test_loader, validation_loader = load_funtions.load_bedrooms(batch_size=batch_size, shuffle=False)
+        input_shape = (3, 28, 28)
 
     else:
         raise ValueError('Wrond dataset name')

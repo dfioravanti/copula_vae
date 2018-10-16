@@ -86,6 +86,86 @@ def load_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, downl
     return train_loader, test_loader, valid_loader
 
 
+def load_bedrooms(root_dir=None, batch_size=20, shuffle=True, transform=None):
+
+    if root_dir is None:
+        root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
+        root_dir = str(root_dir)
+
+    if transform is None:
+        transform = transforms.ToTensor()
+
+    train_dataset = datasets.LSUN(root_dir, classes=['classroom_train'], transform=transform)
+
+    size_train = len(train_dataset)
+    indices = list(range(size_train))
+    split = int(np.floor(0.2 * size_train))
+
+    if shuffle:
+        np.random.shuffle(indices)
+
+    train_idx, valid_idx = indices[split:], indices[:split]
+    train_sampler = data_utils.SubsetRandomSampler(train_idx)
+    valid_sampler = data_utils.SubsetRandomSampler(valid_idx)
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size, sampler=train_sampler, shuffle=shuffle
+    )
+
+    valid_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size, sampler=valid_sampler, shuffle=shuffle
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(root_dir, train=False, transform=transforms.Compose([
+            transforms.ToTensor(),
+            transform
+        ])),
+        batch_size=batch_size, shuffle=shuffle)
+
+    return train_loader, test_loader, valid_loader
+
+
+def load_omniglot(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
+
+    if root_dir is None:
+        root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
+        root_dir = str(root_dir)
+
+    if transform is None:
+        transform = transforms.ToTensor()
+
+    train_dataset = datasets.Omniglot(root_dir, transform=transform, download=download)
+
+    size_train = len(train_dataset)
+    indices = list(range(size_train))
+    split = int(np.floor(0.2 * size_train))
+
+    if shuffle:
+        np.random.shuffle(indices)
+
+    train_idx, valid_idx = indices[split:], indices[:split]
+    train_sampler = data_utils.SubsetRandomSampler(train_idx)
+    valid_sampler = data_utils.SubsetRandomSampler(valid_idx)
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size, sampler=train_sampler, shuffle=shuffle
+    )
+
+    valid_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size, sampler=valid_sampler, shuffle=shuffle
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        datasets.MNIST(root_dir, train=False, transform=transforms.Compose([
+            transforms.ToTensor(),
+            transform
+        ])),
+        batch_size=batch_size, shuffle=shuffle)
+
+    return train_loader, test_loader, valid_loader
+
+
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt

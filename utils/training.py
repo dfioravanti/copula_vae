@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import torch
+import torch.nn as nn
 
 from utils.plot_utils import plot_grid_images_file
 
@@ -29,8 +30,14 @@ def train_epoch(model,
 
         if batch_idx == 0 and output_dir is not None:
             print(f'plotting')
+
+            if isinstance(model, nn.DataParallel):
+                input_shape = model.module.input_shape
+            else:
+                input_shape = model.input_shape
+
             plot_reconstruction(xs_reconstructed[:10],
-                                model.input_shape,
+                                input_shape,
                                 epoch,
                                 output_dir)
 

@@ -141,6 +141,10 @@ def load_omniglot(root_dir=None, batch_size=20, shuffle=True, transform=None, do
     indices = list(range(size_train))
     split = int(np.floor(0.2 * size_train))
 
+    if split % batch_size != 0:
+        raise ValueError(f'The batch size: {batch_size} does not divide the size of '
+                         f'the train_dataset: {size_train-split} or the size of the validation_dataset: {split}')
+
     if shuffle:
         np.random.shuffle(indices)
 

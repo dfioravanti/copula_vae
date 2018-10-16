@@ -78,7 +78,10 @@ class CopulaVAEWithNormals(BaseVAE):
     def sampling_copula_with_normal_inverse(self, means, log_vars, number_latent_variables):
 
         cov = np.eye(number_latent_variables)
-        xs = torch.FloatTensor(copula_sampling.sampling_from_gausiann_copula(cov, 1)).to(self.device)
+        xs = torch.FloatTensor(copula_sampling.sampling_from_gausiann_copula(cov, 1))
+
+        if torch.cuda.is_available():
+            xs.to(means.get_device())
 
         return gaussian_icdf(means, log_vars, xs)
 

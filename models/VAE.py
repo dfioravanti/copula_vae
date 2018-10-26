@@ -9,12 +9,12 @@ from utils.nn import GatedDense
 class VAE(BaseVAE):
 
     def __init__(self,
-                 number_latent_variables,
+                 dimension_latent_space,
                  input_shape,
                  encoder_output_size=300,
                  device=torch.device("cpu")):
 
-        super(VAE, self).__init__(number_latent_variables=number_latent_variables,
+        super(VAE, self).__init__(dimension_latent_space=dimension_latent_space,
                                   input_shape=input_shape,
                                   device=device)
 
@@ -27,16 +27,16 @@ class VAE(BaseVAE):
             GatedDense(300, self.encoder_output_size)
         )
 
-        self.mean = nn.Linear(self.encoder_output_size, self.number_latent_variables)
+        self.mean = nn.Linear(self.encoder_output_size, self.dimension_latent_space)
         self.log_var = nn.Sequential(
-            nn.Linear(self.encoder_output_size, self.number_latent_variables),
+            nn.Linear(self.encoder_output_size, self.dimension_latent_space),
             nn.Hardtanh(min_val=-6, max_val=2)
         )
 
         # Decoder p(x|z)
 
         self.p_x_layers = nn.Sequential(
-            GatedDense(self.number_latent_variables, 300),
+            GatedDense(self.dimension_latent_space, 300),
             GatedDense(300, 300)
         )
 

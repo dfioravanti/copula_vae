@@ -2,52 +2,61 @@ from models.basic_model import BaseVAE
 
 import numpy as np
 
-
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from utils.nn import GatedDense
-from utils import copula_sampling
+from utils.copula_sampling import sampling_from_gausiann_copula
 from utils.distributions import gaussian_icdf, log_normal_standard, log_normal_by_component
 
 
 class CopulaVAEWithNormals(BaseVAE):
 
     def __init__(self,
-                 number_latent_variables,
+                 dimension_latent_space,
                  input_shape,
                  encoder_output_size=300,
                  device=torch.device("cpu")):
 
-        super(CopulaVAEWithNormals, self).__init__(number_latent_variables=number_latent_variables,
+        super(CopulaVAEWithNormals, self).__init__(dimension_latent_space=dimension_latent_space,
                                                    input_shape=input_shape,
                                                    device=device)
 
         self.encoder_output_size = encoder_output_size
 
-        # Encoder q(z|x)
+        number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
 
-        self.q_z_layers = nn.Sequential(
-            GatedDense(np.prod(self.input_shape), 300),
-            GatedDense(300, self.encoder_output_size)
+        # Encoder q(s | x)
+        # L(x) without the final activtion function
+
+        self.L_layers = nn.Sequential(
+            nn.Linear(np.prod(self.input_shape), 300),
+            nn.ReLU(),
+            nn.Linear(300, number_neurons_L)
         )
 
-        self.mean = nn.Linear(self.encoder_output_size, self.number_latent_variables)
-        self.log_var = nn.Sequential(
-            nn.Linear(self.encoder_output_size, self.number_latent_variables),
+        # Decoder p(x|s)
+
+        # F_l(s) for now we assume that everything is gaussian
+
+        self.mean_z = nn.Linear(self.dimension_latent_space, self.dimension_latent_space)
+        self.var_z = nn.Sequential(
+            nn.Linear(self.dimension_latent_space, self.dimension_latent_space),
             nn.Hardtanh(min_val=-6, max_val=2)
         )
 
-        # Decoder p(x|z)
+        # F(z)
 
-        self.p_x_layers = nn.Sequential(
-            GatedDense(self.number_latent_variables, 300),
-            GatedDense(300, 300)
+        self.F_x_layers = nn.Sequential(
+            nn.Linear(self.dimension_latent_space, 300),
+            nn.ReLU(),
+            nn.Linear(300, np.prod(self.input_shape)),
+            nn.Sigmoid()
         )
 
         self.output_decoder = nn.Sequential(
-            nn.Linear(300, np.prod(self.input_shape)),
-            nn.Sigmoid()
+
         )
 
         # weights initialization
@@ -57,23 +66,46 @@ class CopulaVAEWithNormals(BaseVAE):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        mean_z_x, log_var_z_x = self.q_z(x)
-        z_x = sampling_copula_with_normal_inverse(mean_z_x, log_var_z_x, self.number_latent_variables)
+
+        s_x, L_x = self.q_s(x)
 
         # x_mean = p(x|z)
-        x_recontructed = self.p_x(z_x)
+        x_recontructed = self.p_x(s_x)
 
-        return x_recontructed, mean_z_x, log_var_z_x
+        return x_recontructed, L_x
 
-    def q_z(self, x):
-        x = self.q_z_layers(x)
+    def q_s(self, x):
 
-        return self.mean(x), self.log_var(x)
+        batch_size = x.shape[0]
 
-    def p_x(self, z):
-        z = self.p_x_layers(z)
+        L_x = self._compute_L_x(x, batch_size)
 
-        return self.output_decoder(z)
+        s = sampling_from_gausiann_copula(L_x, batch_size, self.dimension_latent_space)
+
+        return s, L_x
+
+    def p_x(self, s):
+
+        # F_l(s)
+
+        mean_z, var_z = self.mean_z(s), self.var_z(s)
+        z = gaussian_icdf(mean_z, var_z, s)
+
+        return self.output_decoder(self.F_x_layers(z))
+
+    def _compute_L_x(self, x, batch_size):
+
+        idx_trn = np.tril_indices(self.dimension_latent_space)
+        idx_diag = np.diag_indices(self.dimension_latent_space)
+        idx_not_diag = np.tril_indices(self.dimension_latent_space, -1)
+
+        L_x = torch.zeros([batch_size, self.dimension_latent_space, self.dimension_latent_space]).to(self.device)
+
+        L_x[:, idx_trn[0], idx_trn[1]] = self.L_layers(x)
+        L_x[:, idx_diag[0], idx_diag[1]] = F.relu(L_x[:, idx_diag[0], idx_diag[1]])
+        L_x[:, idx_not_diag[0], idx_not_diag[1]] = F.tanhshrink(L_x[:, idx_not_diag[0], idx_not_diag[1]])
+
+        return L_x
 
 
 def sampling_copula_with_normal_inverse(means, log_vars, number_latent_variables, size=1):

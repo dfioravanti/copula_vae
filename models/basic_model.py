@@ -14,19 +14,19 @@ class BaseVAE(nn.Module):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self,
-                 number_latent_variables,
+                 dimension_latent_space,
                  input_shape,
                  device=torch.device("cpu")):
 
         super(BaseVAE, self).__init__()
 
-        self.number_latent_variables = number_latent_variables
+        self.dimension_latent_space = dimension_latent_space
         self.input_shape = input_shape
         self.device = device
 
     def sampling_normal_with_reparametrization(self, mean, log_variance):
 
-        zero_one_normal = torch.randn(self.number_latent_variables, dtype=log_variance.dtype).to(self.device)
+        zero_one_normal = torch.randn(self.dimension_latent_space, dtype=log_variance.dtype).to(self.device)
         variance = log_variance.exp()
 
         return zero_one_normal.mul(variance).add(mean)
@@ -58,7 +58,7 @@ class BaseVAE(nn.Module):
 
 if __name__ == '__main__':
 
-    test = BaseVAE(number_latent_variables=1, input_shape=1)
+    test = BaseVAE(dimension_latent_space=1, input_shape=1)
     log_variance = torch.tensor(1, dtype=torch.float32)
     mean = torch.tensor(0, dtype=torch.float32)
     print(test.sampling_normal_with_reparametrization(mean=mean, log_variance=log_variance))

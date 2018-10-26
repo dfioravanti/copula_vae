@@ -77,6 +77,9 @@ def sampling_from_gausiann_copula(L, batch_size, n):
     size = (batch_size, 1, n)
 
     es = torch.randn(size=size)
+    if L.is_cuda:
+        es = es.to(L.get_device())
+
     xs = (es @ L).view(batch_size, -1)
 
     return gaussian_0_I_cdf(xs)

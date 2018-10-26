@@ -59,7 +59,7 @@ parser.add_argument('--MB', type=int, default=100, metavar='MBLL',
                     help='size of a mini-batch used for approximating log-likelihood')
 
 # dataset
-parser.add_argument('--dataset_name', type=str, default='cifar10', metavar='DN',
+parser.add_argument('--dataset_name', type=str, default='binary_mnist', metavar='DN',
                     help='name of the dataset: binary_mnist, mnist, bedrooms,'
                          ' omniglot, cifar10')
 
@@ -100,13 +100,13 @@ def main(args):
                                                                              batch_size=args.batch_size)
 
     if args.prior == 'standard':
-        model = VAE(number_latent_variables=args.z_size,
+        model = VAE(dimension_latent_space=args.z_size,
                     input_shape=input_shape,
                     encoder_output_size=300,
                     device=args.device)
 
     if args.prior == 'gaussian_copula':
-        model = CopulaVAEWithNormals(number_latent_variables=args.z_size,
+        model = CopulaVAEWithNormals(dimension_latent_space=args.z_size,
                                      input_shape=input_shape,
                                      encoder_output_size=300,
                                      device=args.device)

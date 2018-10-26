@@ -5,8 +5,6 @@ import torch
 import torch.nn as nn
 
 from utils.plot_utils import plot_grid_images_file
-from models.copula_VAE import compute_KL
-
 
 def train_epoch(model,
                 epoch,
@@ -24,17 +22,15 @@ def train_epoch(model,
 
     if isinstance(model, nn.DataParallel):
         input_shape = model.module.input_shape
-        number_latent_variables = model.module.number_latent_variables
     else:
         input_shape = model.input_shape
-        number_latent_variables = model.number_latent_variables
 
     for batch_idx, (xs, _) in enumerate(loader):
 
         optimizer.zero_grad()
 
         xs = xs.view(loader.batch_size, -1).to(device)
-        xs_reconstructed, mean_z_x, log_var_z_x = model(xs)
+        xs_reconstructed, L_x = model(xs)
 
         if batch_idx == 0 and output_dir is not None:
             print(f'plotting')
@@ -46,12 +42,9 @@ def train_epoch(model,
 
         loss, reconstruction_error, KL = calculate_loss(xs,
                                                         xs_reconstructed,
+                                                        L_x,
                                                         loss_function=loss_function,
-                                                        beta=beta,
-                                                        mean_z_x=mean_z_x,
-                                                        log_var_z_x=log_var_z_x,
-                                                        number_latent_variables=number_latent_variables,
-                                                        number_samples_kl=1)
+                                                        beta=beta)
         loss.backward()
         optimizer.step()
 
@@ -77,23 +70,15 @@ def validation_epoch(model,
     batch_REs = np.zeros_like(batch_losses)
     batch_KLs = np.zeros_like(batch_losses)
 
-    if isinstance(model, nn.DataParallel):
-        number_latent_variables = model.module.number_latent_variables
-    else:
-        number_latent_variables = model.number_latent_variables
-
     for batch_idx, (xs, _) in enumerate(loader):
         xs = xs.view(loader.batch_size, -1).to(device)
-        xs_reconstructed, mean_z_x, log_var_z_x = model(xs)
+        xs_reconstructed, L_x = model(xs)
 
         loss, reconstruction_error, KL = calculate_loss(xs,
                                                         xs_reconstructed,
+                                                        L_x,
                                                         loss_function=loss_function,
-                                                        beta=beta,
-                                                        mean_z_x=mean_z_x,
-                                                        log_var_z_x=log_var_z_x,
-                                                        number_latent_variables=number_latent_variables,
-                                                        number_samples_kl=1)
+                                                        beta=beta)
 
         batch_losses[batch_idx] = loss
         batch_REs[batch_idx] = reconstruction_error
@@ -128,11 +113,18 @@ def plot_reconstruction(xs_reconstructed,
                           filename=filename)
 
 
-def calculate_loss(xs, xs_reconstructed, loss_function, beta,
-                   mean_z_x, log_var_z_x, number_latent_variables, number_samples_kl):
+def calculate_loss(xs, xs_reconstructed, L_x, loss_function, beta):
+
+    k = L_x.shape[1]
+
+    ixd_diag = np.diag_indices(k)
+    diag_L_x = L_x[:, ixd_diag[0], ixd_diag[1]]
 
     RE = loss_function(xs, xs_reconstructed)
-    KL = compute_KL(mean_z_x, log_var_z_x, number_latent_variables, number_samples_kl)
+
+    tr_R = torch.sum(L_x ** 2, dim=(1, 2))
+    tr_log_L = torch.sum(torch.log(diag_L_x), dim=1)
+    KL = torch.mean((tr_R - k) / 2 - tr_log_L)
 
     return RE + beta * KL, RE, KL
 

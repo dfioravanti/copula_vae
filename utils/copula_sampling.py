@@ -3,6 +3,9 @@ from numpy.random import uniform
 from scipy.stats import levy_stable
 from scipy import stats
 
+import torch
+from utils.distributions import gaussian_0_I_cdf
+
 
 def partition(number, classes):
 
@@ -69,15 +72,14 @@ def sampling_from_gumbel_partially_nested_copula(d, s, thetas):
     return psi_0(-np.log(xs) / v_0)
 
 
-def sampling_from_gausiann_copula(covariance_matrix, size):
+def sampling_from_gausiann_copula(L, batch_size, n):
 
-    d = covariance_matrix.shape[0]
-    zs = np.random.normal(size=(size, d))
+    size = (batch_size, 1, n)
 
-    A = np.linalg.cholesky(covariance_matrix).T
+    es = torch.randn(size=size)
+    xs = (es @ L).view(batch_size, -1)
 
-    xs = zs @ A
-    return stats.norm.cdf(xs)
+    return gaussian_0_I_cdf(xs)
 
 
 if __name__ == '__main__':
@@ -92,11 +94,11 @@ if __name__ == '__main__':
     from mpl_toolkits.mplot3d import Axes3D
 
     np.random.seed(123)
-    n = 200
+    n = 20000
 
-    cov = np.matrix([[1, 0, 0.9],
+    cov = np.matrix([[1, 0, 0],
                     [0, 1, 0],
-                    [0.9, 0, 1]]
+                    [0, 0, 1]]
                     )
 
     #cov = np.eye(3)
@@ -104,23 +106,24 @@ if __name__ == '__main__':
     xs = sampling_from_gausiann_copula(cov, n)
     zs = np.zeros_like(xs)
 
-#    fig = plt.figure()
- #   ax = fig.gca(projection='3d')
+    fig = plt.figure()
+    #ax = fig.gca(projection='3d')
 
     f = g = h = stats.norm(0, 1)
-    g = stats.poisson(1)
-    h = stats.bernoulli(0.5)
+#    g = stats.poisson(1)
+ #   h = stats.bernoulli(0.5)
 
     zs[:, 0], zs[:, 1], zs[:, 2] = f.ppf(xs[:, 0]), g.ppf(xs[:, 1]), h.ppf(xs[:, 2])
 
-    #ax.scatter(xs[:, 0], xs[:, 1], xs[:, 2], color='blue')
+    #plt.scatter(zs[:, 0], zs[:, 1], color='blue')
     #ts[:, 0], ts[:, 1], ts[:, 2] = f.ppf(xs[:, 0]), g.ppf(xs[:, 1]), h.ppf(xs[:, 2])
-    #ax.scatter(ts[:, 0], ts[:, 1], ts[:, 2], color='red')
 
-
+    ys = np.random.normal(size=(n, 2))
+    #plt.scatter(ys[:, 0], ys[:, 1], color='red')
 
     #
 
     df = pd.DataFrame(zs)
-    sns.pairplot(df)
+    sns.distplot(ys[:, 0])
+    sns.distplot(zs[:, 0])
     plt.show()

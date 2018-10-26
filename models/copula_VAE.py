@@ -102,28 +102,7 @@ class CopulaVAEWithNormals(BaseVAE):
         L_x = torch.zeros([batch_size, self.dimension_latent_space, self.dimension_latent_space]).to(self.device)
 
         L_x[:, idx_trn[0], idx_trn[1]] = self.L_layers(x)
-        L_x[:, idx_diag[0], idx_diag[1]] = F.relu(L_x[:, idx_diag[0], idx_diag[1]])
+        L_x[:, idx_diag[0], idx_diag[1]] = torch.sigmoid(L_x[:, idx_diag[0], idx_diag[1]])
         L_x[:, idx_not_diag[0], idx_not_diag[1]] = F.tanhshrink(L_x[:, idx_not_diag[0], idx_not_diag[1]])
 
         return L_x
-
-
-def sampling_copula_with_normal_inverse(means, log_vars, number_latent_variables, size=1):
-
-    cov = np.eye(number_latent_variables)
-    xs = torch.FloatTensor(copula_sampling.sampling_from_gausiann_copula(cov, size))
-
-    if torch.cuda.is_available():
-        xs = xs.to(means.get_device())
-
-    return gaussian_icdf(means, log_vars, xs)
-
-
-def compute_KL(means, log_vars, number_latent_variables, number_samples_kl):
-
-    zs = sampling_copula_with_normal_inverse(means, log_vars, number_latent_variables, number_samples_kl)
-
-    log_ps = log_normal_standard(zs)
-    log_qs = log_normal_by_component(zs, means, log_vars)
-
-    return torch.mean(log_ps - log_qs)

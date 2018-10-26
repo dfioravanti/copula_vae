@@ -1,18 +1,27 @@
 
 import math
 
-import numpy as np
 import torch
 
 
-def gaussian_icdf(means, sigmas, value):
+def gaussian_icdf(means, sigmas, values):
 
-    dim = value.shape[0]
+    return means + sigmas * torch.erfinv(2 * values - 1) * math.sqrt(2)
+
+
+def gaussian_0_I_cdf(values):
+
+    return 0.5 * (1 + torch.erf((values) / math.sqrt(2)))
+
+
+def gaussian_cdf(means, sigmas, values):
+
+    dim = values.shape[0]
 
     means = means.repeat((dim, 1))
     sigmas = sigmas.repeat((dim, 1))
 
-    return means + sigmas * torch.erfinv(2 * value - 1) * math.sqrt(2)
+    return 0.5 * (1 + torch.erf((values - means) * sigmas.reciprocal() / math.sqrt(2)))
 
 
 def log_normal_by_component(x, mean, log_var, average=False):

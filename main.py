@@ -14,7 +14,7 @@ import numpy as np
 
 import torch
 import torch.nn as nn
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 
 # Training settings
 parser = argparse.ArgumentParser(description='VAE')
@@ -59,7 +59,7 @@ parser.add_argument('--MB', type=int, default=100, metavar='MBLL',
                     help='size of a mini-batch used for approximating log-likelihood')
 
 # dataset
-parser.add_argument('--dataset_name', type=str, default='binary_mnist', metavar='DN',
+parser.add_argument('--dataset_name', type=str, default='mnist', metavar='DN',
                     help='name of the dataset: binary_mnist, mnist, bedrooms,'
                          ' omniglot, cifar10')
 

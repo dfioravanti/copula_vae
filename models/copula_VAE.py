@@ -25,7 +25,7 @@ class CopulaVAEWithNormals(BaseVAE):
 
         self.encoder_output_size = encoder_output_size
 
-        number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
+        self.number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
 
         # Encoder q(s | x)
         # L(x) without the final activtion function
@@ -33,7 +33,7 @@ class CopulaVAEWithNormals(BaseVAE):
         self.L_layers = nn.Sequential(
             nn.Linear(np.prod(self.input_shape), 300),
             nn.ReLU(),
-            nn.Linear(300, number_neurons_L)
+            nn.Linear(300, self.number_neurons_L)
         )
 
         # Decoder p(x|s)
@@ -43,7 +43,7 @@ class CopulaVAEWithNormals(BaseVAE):
         self.mean_z = nn.Linear(self.dimension_latent_space, self.dimension_latent_space)
         self.var_z = nn.Sequential(
             nn.Linear(self.dimension_latent_space, self.dimension_latent_space),
-            nn.Hardtanh(min_val=-6, max_val=2)
+            nn.Softplus()
         )
 
         # F(z)
@@ -62,7 +62,7 @@ class CopulaVAEWithNormals(BaseVAE):
         # weights initialization
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight)
+                nn.init.xavier_normal_(m.weight)
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
@@ -88,7 +88,7 @@ class CopulaVAEWithNormals(BaseVAE):
 
         # F_l(s)
 
-        mean_z, var_z = self.mean_z(s), self.var_z(s)
+        mean_z, var_z = self.mean_z(s), self.var_z(s) + 1e-5
         z = gaussian_icdf(mean_z, var_z, s)
 
         return self.output_decoder(self.F_x_layers(z))
@@ -102,7 +102,7 @@ class CopulaVAEWithNormals(BaseVAE):
         L_x = torch.zeros([batch_size, self.dimension_latent_space, self.dimension_latent_space]).to(self.device)
 
         L_x[:, idx_trn[0], idx_trn[1]] = self.L_layers(x)
-        L_x[:, idx_diag[0], idx_diag[1]] = torch.sigmoid(L_x[:, idx_diag[0], idx_diag[1]])
-        L_x[:, idx_not_diag[0], idx_not_diag[1]] = F.tanhshrink(L_x[:, idx_not_diag[0], idx_not_diag[1]])
+        L_x[:, idx_diag[0], idx_diag[1]] = torch.sigmoid(L_x[:, idx_diag[0], idx_diag[1]]) + 1e-5
+        L_x[:, idx_not_diag[0], idx_not_diag[1]] = L_x[:, idx_not_diag[0], idx_not_diag[1]]
 
         return L_x

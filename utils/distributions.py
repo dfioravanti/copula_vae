@@ -6,6 +6,8 @@ import torch
 
 def gaussian_icdf(means, sigmas, values):
 
+    values = torch.clamp(values, min=0.0001, max=0.9999)
+
     return means + sigmas * torch.erfinv(2 * values - 1) * math.sqrt(2)
 
 

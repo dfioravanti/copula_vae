@@ -59,9 +59,9 @@ parser.add_argument('--MB', type=int, default=100, metavar='MBLL',
                     help='size of a mini-batch used for approximating log-likelihood')
 
 # dataset
-parser.add_argument('--dataset_name', type=str, default='mnist', metavar='DN',
+parser.add_argument('--dataset_name', type=str, default='fashionmnist', metavar='DN',
                     help='name of the dataset: binary_mnist, mnist, bedrooms,'
-                         ' omniglot, cifar10')
+                         ' omniglot, cifar10, fashionmnist')
 
 parser.add_argument('--dynamic_binarization', action='store_true', default=False,
                     help='allow dynamic binarization')
@@ -142,6 +142,12 @@ def load_dataset(dataset_name, batch_size=50):
     elif dataset_name == 'mnist':
 
         train_loader, test_loader, validation_loader = load_funtions.load_MNIST(batch_size=batch_size, shuffle=False)
+        input_shape = (1, 28, 28)
+
+    elif dataset_name == 'fashionmnist':
+
+        train_loader, test_loader, validation_loader = load_funtions.load_FashionMNIST(batch_size=batch_size,
+                                                                                       shuffle=False)
         input_shape = (1, 28, 28)
 
     elif dataset_name == 'omniglot':

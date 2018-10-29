@@ -163,7 +163,10 @@ def train_on_dataset(model,
                                                                        device=device)
 
         if verbose:
-            print(f'epoch: {epoch}/{epochs} => train loss: {epoch_train_loss} and val loss: {epoch_val_loss}')
+            print(f'epoch: {epoch}/{epochs}\n'
+                  f'train loss: {epoch_train_loss} and val loss: {epoch_val_loss}\n'
+                  f'train RE: {epoch_train_RE} and val RE: {epoch_val_RE}\n'
+                  f'train KL: {epoch_train_KLs} and val KL: {epoch_val_KLs}\n')
 
         if epoch_val_loss < best_loss:
 

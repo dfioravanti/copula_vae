@@ -106,10 +106,10 @@ def main(args):
                     device=args.device)
 
     if args.prior == 'gaussian_copula':
-        model = CopulaVAE(dimension_latent_space=args.z_size,
-                          input_shape=input_shape,
-                          encoder_output_size=300,
-                          device=args.device)
+        model = CopulaVAEWithNormals(dimension_latent_space=args.z_size,
+                                     input_shape=input_shape,
+                                     encoder_output_size=300,
+                                     device=args.device)
 
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")

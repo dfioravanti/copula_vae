@@ -150,13 +150,13 @@ class CopulaVAE(BaseCopulaVAE):
 
         self.z_s_layers = nn.Sequential(
             OneToOne(self.dimension_latent_space),
-            nn.ELU(),
+            nn.ReLU(),
             OneToOne(self.dimension_latent_space),
-            nn.ELU(),
+            nn.ReLU(),
             OneToOne(self.dimension_latent_space),
-            nn.ELU(),
+            nn.ReLU(),
             OneToOne(self.dimension_latent_space),
-            nn.ELU(),
+            nn.ReLU(),
             OneToOne(self.dimension_latent_space)
         )
 

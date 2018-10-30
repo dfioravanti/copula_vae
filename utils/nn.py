@@ -49,6 +49,9 @@ class OneToOne(nn.Module):
 
     def forward(self, input):
 
+        if torch.cuda:
+            self.mask = self.mask.to(self.weight.get_device())
+
         masked_weight = self.mask * self.weight
         return F.linear(input, masked_weight) + self.bias
 

@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_grid_images_file(images, columns=1, titles=None, filename=None):
+def plot_grid_images_file(xs, recontructed, columns=1, filename=None):
 
     """Display a list of images in a single figure with matplotlib.
 
     Parameters
     ---------
-    images: List of np.arrays compatible with plt.imshow.
+    recontructed: List of np.arrays compatible with plt.imshow.
 
     columns: Number of columns in figure (number of rows is
             set to np.ceil(n_images/float(cols))).
@@ -18,29 +18,29 @@ def plot_grid_images_file(images, columns=1, titles=None, filename=None):
             the same length as titles.
     """
 
-    assert ((titles is None) or (len(images) == len(titles)))
-
-    number_images = len(images)
-
-    if titles is None:
-        titles = [f'Image ({i})' for i in range(1, number_images + 1)]
-
-    images = np.squeeze(images)
+    number_images = len(recontructed)
+    xs = np.squeeze(xs)
+    recontructed = np.squeeze(recontructed)
 
     fig = plt.figure()
-    rows = np.ceil(number_images / columns)
 
-    for n, (image, title) in enumerate(zip(images, titles)):
+    for n, (x, rec) in enumerate(zip(xs, recontructed)):
 
-        ax = fig.add_subplot(rows, columns, n + 1)
+        ax1 = fig.add_subplot(2, columns, n + 1, frameon=False)
+        ax2 = fig.add_subplot(2, columns, n + 1 + number_images, frameon=False)
 
-        if image.ndim == 2:
+        if x.ndim == 2:
             plt.gray()
         else:
-            image = np.moveaxis(image, 0, -1)
+            x = np.moveaxis(x, 0, -1)
+            rec = np.moveaxis(rec, 0, -1)
 
-        ax.imshow(image)
-        ax.set_title(title)
+        ax1.imshow(x)
+        ax2.imshow(rec)
+
+        for x in [ax1, ax2]:
+            x.yaxis.set_ticks([])
+            x.xaxis.set_ticks([])
 
     fig.set_size_inches(np.array(fig.get_size_inches()) * number_images)
 

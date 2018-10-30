@@ -35,7 +35,8 @@ def train_epoch(model,
         if batch_idx == 0 and output_dir is not None:
             print(f'plotting')
 
-            plot_reconstruction(xs_reconstructed[:10],
+            plot_reconstruction(xs[:10],
+                                xs_reconstructed[:10],
                                 input_shape,
                                 epoch,
                                 output_dir)
@@ -100,16 +101,20 @@ def compute_beta(epoch, warmup):
     return beta
 
 
-def plot_reconstruction(xs_reconstructed,
+def plot_reconstruction(xs,
+                        xs_reconstructed,
                         input_shape,
                         epoch,
                         output_dir):
+
+    xs = xs.view((-1,) + input_shape)
     xs_reconstructed = xs_reconstructed.view((-1,) + input_shape)
 
     filename = output_dir / f'Epoch {epoch}'
 
-    plot_grid_images_file(xs_reconstructed.to('cpu').detach().numpy()[0:10, :],
-                          columns=5,
+    plot_grid_images_file(xs.to('cpu').detach().numpy()[0:10, :],
+                          xs_reconstructed.to('cpu').detach().numpy()[0:10, :],
+                          columns=10,
                           filename=filename)
 
 

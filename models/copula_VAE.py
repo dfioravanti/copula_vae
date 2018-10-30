@@ -151,9 +151,10 @@ class CopulaVAE(BaseCopulaVAE):
         # F_l(s) for now we assume that everything is gaussian
 
         self.z_s_layers = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, self.dimension_latent_space * 3),
+            nn.Linear(self.dimension_latent_space, self.dimension_latent_space * 5),
             nn.ReLU(),
-            nn.Linear(self.dimension_latent_space * 3, self.dimension_latent_space),
+            nn.Linear(self.dimension_latent_space * 5, self.dimension_latent_space),
+            nn.Tanhshrink()
         )
 
         # F(z)

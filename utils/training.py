@@ -110,7 +110,9 @@ def plot_reconstruction(xs,
     xs = xs.view((-1,) + input_shape)
     xs_reconstructed = xs_reconstructed.view((-1,) + input_shape)
 
-    filename = output_dir / f'Epoch {epoch}'
+    image_dir = output_dir / 'images'
+    image_dir.mkdir(parents=True, exist_ok=True)
+    filename = image_dir / f'Epoch {epoch}'
 
     plot_grid_images_file(xs.to('cpu').detach().numpy()[0:10, :],
                           xs_reconstructed.to('cpu').detach().numpy()[0:10, :],
@@ -143,8 +145,16 @@ def train_on_dataset(model,
                      early_stopping_tolerance=10,
                      device=torch.device("cpu"),
                      output_dir=None):
+
     best_loss = math.inf
     early_stopping_strikes = 0
+
+    train_loss = np.zeros(epochs)
+    train_RE = np.zeros_like(train_loss)
+    train_KL = np.zeros_like(train_loss)
+    val_loss = np.zeros_like(train_loss)
+    val_RE = np.zeros_like(train_loss)
+    val_KL = np.zeros_like(train_loss)
 
     for epoch in range(epochs):
 
@@ -152,7 +162,7 @@ def train_on_dataset(model,
         if verbose:
             print(f'Training with beta = {beta}')
 
-        epoch_train_loss, epoch_train_RE, epoch_train_KLs = train_epoch(model=model,
+        train_loss[epoch], train_RE[epoch], train_KL[epoch] = train_epoch(model=model,
                                                                         loader=loader_train,
                                                                         optimizer=optimizer,
                                                                         loss_function=loss,
@@ -161,7 +171,7 @@ def train_on_dataset(model,
                                                                         device=device,
                                                                         output_dir=output_dir)
 
-        epoch_val_loss, epoch_val_RE, epoch_val_KLs = validation_epoch(model=model,
+        val_loss[epoch], val_RE[epoch], val_KL[epoch] = validation_epoch(model=model,
                                                                        loss_function=loss,
                                                                        beta=beta,
                                                                        loader=loader_validation,
@@ -169,17 +179,19 @@ def train_on_dataset(model,
 
         if verbose:
             print(f'epoch: {epoch}/{epochs}\n'
-                  f'train loss: {epoch_train_loss} and val loss: {epoch_val_loss}\n'
-                  f'train RE: {epoch_train_RE} and val RE: {epoch_val_RE}\n'
-                  f'train KL: {epoch_train_KLs} and val KL: {epoch_val_KLs}\n')
+                  f'train loss: {train_loss[epoch]} and val loss: {val_loss[epoch]}\n'
+                  f'train RE: {train_RE[epoch]} and val RE: {val_RE[epoch]}\n'
+                  f'train KL: {train_KL[epoch]} and val KL: {val_KL[epoch]}\n')
 
-        if epoch_val_loss < best_loss:
+        if val_loss[epoch] < best_loss:
 
             early_stopping_strikes = 0
-            best_loss = epoch_val_loss
+            best_loss = val_loss[epoch]
 
         elif warmup is not None and epoch > warmup:
 
             early_stopping_strikes += 1
             if early_stopping_strikes >= early_stopping_tolerance:
                 break
+
+    return model, (train_loss, train_RE, train_KL), (val_loss, val_RE, val_KL)

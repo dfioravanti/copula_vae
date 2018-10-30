@@ -20,8 +20,8 @@ from torch.optim import Adam
 parser = argparse.ArgumentParser(description='VAE')
 
 # arguments for optimization
-parser.add_argument('--batch_size', type=int, default=128, metavar='BStrain',
-                    help='input batch size for training (default: 128)')
+parser.add_argument('--batch_size', type=int, default=100, metavar='BStrain',
+                    help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=2000, metavar='E',
                     help='number of epochs to train (default: 2000)')
 parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
@@ -81,7 +81,6 @@ args.loss = choose_loss_function(args.loss)
 args.output_dir = pathlib.Path(args.output_dir)
 args.output_dir.mkdir(parents=True, exist_ok=True)
 
-
 if args.warmup == 0:
     args.warmup = None
 
@@ -117,17 +116,19 @@ def main(args):
 
     model = model.to(args.device)
 
-    train_on_dataset(model=model,
-                     loader_train=train_loader,
-                     loader_validation=validation_loader,
-                     optimizer=Adam(model.parameters(), lr=args.lr),
-                     loss=args.loss,
-                     epochs=args.epochs,
-                     warmup=args.warmup,
-                     verbose=args.verbose,
-                     early_stopping_tolerance=args.early_stopping_epochs,
-                     device=args.device,
-                     output_dir=args.output_dir)
+    model, results_train, results_val = train_on_dataset(model=model,
+                                                         loader_train=train_loader,
+                                                         loader_validation=validation_loader,
+                                                         optimizer=Adam(model.parameters(), lr=args.lr),
+                                                         loss=args.loss,
+                                                         epochs=args.epochs,
+                                                         warmup=args.warmup,
+                                                         verbose=args.verbose,
+                                                         early_stopping_tolerance=args.early_stopping_epochs,
+                                                         device=args.device,
+                                                         output_dir=args.output_dir)
+
+    save_results(model, results_train, results_val, args.output_dir)
 
     print('Done')
 
@@ -169,6 +170,20 @@ def load_dataset(dataset_name, batch_size=50):
         raise ValueError('Wrond dataset name')
 
     return train_loader, validation_loader, test_loader, input_shape
+
+
+def save_results(model, results_train, results_val, output_dir):
+
+    epoch_train_loss, epoch_train_RE, epoch_train_KLs = results_train
+    epoch_val_loss, epoch_val_RE, epoch_val_KLs = results_val
+
+    torch.save(model.state_dict(), output_dir / 'model')
+    np.savetxt(output_dir / "loss_train.txt", epoch_train_loss, delimiter='\t')
+    np.savetxt(output_dir / "RE_train.txt", epoch_train_RE, delimiter='\t')
+    np.savetxt(output_dir / "KL_train.txt", epoch_train_KLs, delimiter='\t')
+    np.savetxt(output_dir / "loss_val.txt", epoch_val_loss, delimiter='\t')
+    np.savetxt(output_dir / "RE_val.txt", epoch_val_RE, delimiter='\t')
+    np.savetxt(output_dir / "KL_val.txt", epoch_val_KLs, delimiter='\t')
 
 
 if __name__ == '__main__':

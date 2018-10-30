@@ -7,14 +7,14 @@ from utils.training import train_on_dataset
 from utils.parsing import choose_loss_function
 
 from models.VAE import VAE
-from models.copula_VAE import CopulaVAEWithNormals
+from models.copula_VAE import CopulaVAEWithNormals, CopulaVAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 
 import numpy as np
 
 import torch
 import torch.nn as nn
-from torch.optim import Adam, SGD
+from torch.optim import Adam
 
 # Training settings
 parser = argparse.ArgumentParser(description='VAE')
@@ -59,7 +59,7 @@ parser.add_argument('--MB', type=int, default=100, metavar='MBLL',
                     help='size of a mini-batch used for approximating log-likelihood')
 
 # dataset
-parser.add_argument('--dataset_name', type=str, default='fashionmnist', metavar='DN',
+parser.add_argument('--dataset_name', type=str, default='mnist', metavar='DN',
                     help='name of the dataset: binary_mnist, mnist, bedrooms,'
                          ' omniglot, cifar10, fashionmnist')
 
@@ -106,10 +106,10 @@ def main(args):
                     device=args.device)
 
     if args.prior == 'gaussian_copula':
-        model = CopulaVAEWithNormals(dimension_latent_space=args.z_size,
-                                     input_shape=input_shape,
-                                     encoder_output_size=300,
-                                     device=args.device)
+        model = CopulaVAE(dimension_latent_space=args.z_size,
+                          input_shape=input_shape,
+                          encoder_output_size=300,
+                          device=args.device)
 
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")

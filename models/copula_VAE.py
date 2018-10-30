@@ -4,11 +4,9 @@ import numpy as np
 
 import torch
 from torch import nn
-from torch.nn import functional as F
-
-from utils.nn import GatedDense
+from utils.nn import OneToOne
 from utils.copula_sampling import sampling_from_gausiann_copula
-from utils.distributions import gaussian_icdf, log_normal_standard, log_normal_by_component
+from utils.distributions import gaussian_icdf
 
 
 class BaseCopulaVAE(BaseVAE):
@@ -151,11 +149,15 @@ class CopulaVAE(BaseCopulaVAE):
         # F_l(s) for now we assume that everything is gaussian
 
         self.z_s_layers = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, self.dimension_latent_space),
+            OneToOne(self.dimension_latent_space),
             nn.ELU(),
-            nn.Linear(self.dimension_latent_space, self.dimension_latent_space),
+            OneToOne(self.dimension_latent_space),
             nn.ELU(),
-            nn.Linear(self.dimension_latent_space, self.dimension_latent_space)
+            OneToOne(self.dimension_latent_space),
+            nn.ELU(),
+            OneToOne(self.dimension_latent_space),
+            nn.ELU(),
+            OneToOne(self.dimension_latent_space)
         )
 
         # F(z)

@@ -152,11 +152,10 @@ class CopulaVAE(BaseCopulaVAE):
 
         self.z_s_layers = nn.Sequential(
             nn.Linear(self.dimension_latent_space, self.dimension_latent_space),
-            nn.ReLU(),
+            nn.ELU(),
             nn.Linear(self.dimension_latent_space, self.dimension_latent_space),
-            nn.ReLU(),
-            nn.Linear(self.dimension_latent_space, self.dimension_latent_space),
-            nn.Tanhshrink()
+            nn.ELU(),
+            nn.Linear(self.dimension_latent_space, self.dimension_latent_space)
         )
 
         # F(z)

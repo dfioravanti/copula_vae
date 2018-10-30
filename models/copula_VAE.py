@@ -4,7 +4,7 @@ import numpy as np
 
 import torch
 from torch import nn
-from utils.nn import OneToOne
+from utils.nn import OneToOne, GatedDense
 from utils.copula_sampling import sampling_from_gausiann_copula
 from utils.distributions import gaussian_icdf
 
@@ -47,7 +47,7 @@ class BaseCopulaVAE(BaseVAE):
         mean_z, var_z = self.mean_z(s), self.var_z(s) + 1e-5
         z = gaussian_icdf(mean_z, var_z, s)
 
-        return self.output_decoder(self.F_x_layers(z))
+        return self.F_x_layers(z)
 
     def _compute_L_x(self, x, batch_size):
 
@@ -102,14 +102,8 @@ class CopulaVAEWithNormals(BaseCopulaVAE):
         # F(z)
 
         self.F_x_layers = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, 300),
-            nn.ReLU(),
-            nn.Linear(300, np.prod(self.input_shape)),
-            nn.Sigmoid()
-        )
-
-        self.output_decoder = nn.Sequential(
-
+            GatedDense(self.dimension_latent_space, 300),
+            GatedDense(300, np.prod(self.input_shape))
         )
 
         # weights initialization
@@ -169,10 +163,6 @@ class CopulaVAE(BaseCopulaVAE):
             nn.Sigmoid()
         )
 
-        self.output_decoder = nn.Sequential(
-
-        )
-
         # weights initialization
         for m in self.modules():
             if isinstance(m, nn.Linear):
@@ -185,4 +175,4 @@ class CopulaVAE(BaseCopulaVAE):
 
         z = self.z_s_layers(s)
 
-        return self.output_decoder(self.F_x_layers(z))
+        return self.F_x_layers(z)

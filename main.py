@@ -44,7 +44,7 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
                     help='random seed (default: 42)')
 
 # model
-parser.add_argument('--z_size', type=int, default=40, metavar='M1',
+parser.add_argument('--s_size', type=int, default=40, metavar='M1',
                     help='latent space size (default: 40)')
 
 parser.add_argument('--prior', type=str, default='gaussian_copula', metavar='P',
@@ -100,13 +100,13 @@ def main(args):
                                                                              batch_size=args.batch_size)
 
     if args.prior == 'standard':
-        model = VAE(dimension_latent_space=args.z_size,
+        model = VAE(dimension_latent_space=args.s_size,
                     input_shape=input_shape,
                     encoder_output_size=300,
                     device=args.device)
 
     if args.prior == 'gaussian_copula':
-        model = CopulaVAEWithNormals(dimension_latent_space=args.z_size,
+        model = CopulaVAEWithNormals(dimension_latent_space=args.s_size,
                                      input_shape=input_shape,
                                      encoder_output_size=300,
                                      device=args.device)

@@ -120,7 +120,6 @@ def main(args):
                                                          loader_train=train_loader,
                                                          loader_validation=validation_loader,
                                                          optimizer=Adam(model.parameters(), lr=args.lr),
-                                                         loss=args.loss,
                                                          epochs=args.epochs,
                                                          warmup=args.warmup,
                                                          verbose=args.verbose,

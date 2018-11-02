@@ -4,6 +4,7 @@ import numpy as np
 
 import torch
 from torch import nn
+
 from utils.nn import OneToOne, GatedDense
 from utils.copula_sampling import sampling_from_gausiann_copula
 from utils.distributions import gaussian_icdf
@@ -26,9 +27,10 @@ class BaseCopulaVAE(BaseVAE):
         s_x, L_x = self.q_s(x)
 
         # x_mean = p(x|z)
-        x_recontructed = self.p_x(s_x)
+        p_x_mean, p_x_var = self.p_x(s_x)
+        x_recontructed = p_x_mean
 
-        return x_recontructed, L_x
+        return x_recontructed, L_x, p_x_mean, p_x_var
 
     def q_s(self, x):
 
@@ -47,7 +49,11 @@ class BaseCopulaVAE(BaseVAE):
         mean_z, var_z = self.mean_z(s), self.var_z(s) + 1e-5
         z = gaussian_icdf(mean_z, var_z, s)
 
-        return self.F_x_layers(z)
+        p_x_mean = self.p_x_mean(self.F_x_layers(z))
+        p_x_mean = torch.clamp(p_x_mean, min=0.+1./512., max=1.-1./512.)
+        p_x_var = self.p_x_var(self.F_x_layers(z))
+
+        return p_x_mean, p_x_var
 
     def _compute_L_x(self, x, batch_size):
 
@@ -102,8 +108,16 @@ class CopulaVAEWithNormals(BaseCopulaVAE):
         # F(z)
 
         self.F_x_layers = nn.Sequential(
-            GatedDense(self.dimension_latent_space, 300),
-            GatedDense(300, np.prod(self.input_shape))
+            nn.Linear(self.dimension_latent_space, 300),
+            nn.ReLU()
+        )
+        self.p_x_mean = nn.Sequential(
+            nn.Linear(300, np.prod(self.input_shape)),
+            nn.Sigmoid(),
+        )
+        self.p_x_var = nn.Sequential(
+            nn.Linear(300, np.prod(self.input_shape)),
+            nn.Hardtanh(min_val=-4.5, max_val=0)
         )
 
         # weights initialization

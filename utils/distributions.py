@@ -44,3 +44,24 @@ def log_normal_standard(x, average=False):
         return torch.mean(log_normal)
     else:
         return torch.sum(log_normal)
+
+
+def log_Logistic_256(x, mean, logvar, average=False, reduce=True, dim=None):
+
+    bin_size = 1. / 256.
+
+    # implementation like https://github.com/openai/iaf/blob/master/tf_utils/distributions.py#L28
+    scale = torch.exp(logvar)
+    x = (torch.floor(x / bin_size) * bin_size - mean) / scale
+    cdf_plus = torch.sigmoid(x + bin_size/scale)
+    cdf_minus = torch.sigmoid(x)
+
+    log_logist_256 = - torch.log(cdf_plus - cdf_minus + 1.e-7)
+
+    if reduce:
+        if average:
+            return torch.mean(log_logist_256, dim)
+        else:
+            return torch.sum(log_logist_256, dim)
+    else:
+        return log_logist_256

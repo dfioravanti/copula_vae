@@ -5,12 +5,13 @@ import torch
 import torch.nn as nn
 
 from utils.plot_utils import plot_grid_images_file
+from utils.distributions import log_Logistic_256
+
 
 def train_epoch(model,
                 epoch,
                 loader,
                 optimizer,
-                loss_function,
                 beta,
                 device=torch.device("cpu"),
                 output_dir=None):
@@ -30,7 +31,7 @@ def train_epoch(model,
         optimizer.zero_grad()
 
         xs = xs.view(loader.batch_size, -1).to(device)
-        xs_reconstructed, L_x = model(xs)
+        xs_reconstructed, L_x, p_x_mean, p_x_var = model(xs)
 
         if batch_idx == 0 and output_dir is not None:
             print(f'plotting')
@@ -42,9 +43,9 @@ def train_epoch(model,
                                 output_dir)
 
         loss, reconstruction_error, KL = calculate_loss(xs,
-                                                        xs_reconstructed,
                                                         L_x,
-                                                        loss_function=loss_function,
+                                                        p_x_mean,
+                                                        p_x_var,
                                                         beta=beta)
         loss.backward()
         optimizer.step()
@@ -61,7 +62,6 @@ def train_epoch(model,
 
 
 def validation_epoch(model,
-                     loss_function,
                      beta,
                      loader,
                      device):
@@ -73,12 +73,12 @@ def validation_epoch(model,
 
     for batch_idx, (xs, _) in enumerate(loader):
         xs = xs.view(loader.batch_size, -1).to(device)
-        xs_reconstructed, L_x = model(xs)
+        xs_reconstructed, L_x, p_x_mean, p_x_var = model(xs)
 
         loss, reconstruction_error, KL = calculate_loss(xs,
-                                                        xs_reconstructed,
                                                         L_x,
-                                                        loss_function=loss_function,
+                                                        p_x_mean,
+                                                        p_x_var,
                                                         beta=beta)
 
         batch_losses[batch_idx] = loss
@@ -120,14 +120,15 @@ def plot_reconstruction(xs,
                           filename=filename)
 
 
-def calculate_loss(xs, xs_reconstructed, L_x, loss_function, beta):
+def calculate_loss(xs, L_x, p_x_mean, p_x_logvar, beta):
 
     k = L_x.shape[1]
 
     ixd_diag = np.diag_indices(k)
     diag_L_x = L_x[:, ixd_diag[0], ixd_diag[1]]
 
-    RE = loss_function(xs, xs_reconstructed)
+    RE = log_Logistic_256(xs, p_x_mean, p_x_logvar, average=True, dim=1)
+    RE = torch.mean(RE)
     tr_R = torch.sum(L_x ** 2, dim=(1, 2))
     tr_log_L = torch.sum(torch.log(diag_L_x), dim=1)
     KL = torch.mean((tr_R - k) / 2 - tr_log_L)
@@ -138,7 +139,6 @@ def train_on_dataset(model,
                      loader_train,
                      loader_validation,
                      optimizer,
-                     loss,
                      epochs=50,
                      warmup=None,
                      verbose=True,
@@ -165,14 +165,12 @@ def train_on_dataset(model,
         train_loss[epoch], train_RE[epoch], train_KL[epoch] = train_epoch(model=model,
                                                                         loader=loader_train,
                                                                         optimizer=optimizer,
-                                                                        loss_function=loss,
                                                                         epoch=epoch,
                                                                         beta=beta,
                                                                         device=device,
                                                                         output_dir=output_dir)
 
         val_loss[epoch], val_RE[epoch], val_KL[epoch] = validation_epoch(model=model,
-                                                                       loss_function=loss,
                                                                        beta=beta,
                                                                        loader=loader_validation,
                                                                        device=device)

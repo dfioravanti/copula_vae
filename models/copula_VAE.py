@@ -102,8 +102,10 @@ class CopulaVAEWithNormals(BaseCopulaVAE):
         # F(z)
 
         self.F_x_layers = nn.Sequential(
-            GatedDense(self.dimension_latent_space, 300),
-            GatedDense(300, np.prod(self.input_shape))
+            nn.Linear(self.dimension_latent_space, 300),
+            nn.ReLU(),
+            nn.Linear(300, np.prod(self.input_shape)),
+            nn.Sigmoid()
         )
 
         # weights initialization

@@ -46,12 +46,14 @@ class BaseCopulaVAE(BaseVAE):
 
         # F_l(s)
 
-        mean_z, var_z = self.mean_z(s), self.var_z(s) + 1e-5
+        mean_z, var_z = self.mean_z(s), self.var_z(s) + 1e-7
         z = gaussian_icdf(mean_z, var_z, s)
 
-        p_x_mean = self.p_x_mean(self.F_x_layers(z))
+        F_z = self.F_x_layers(z)
+
+        p_x_mean = self.p_x_mean(F_z)
         p_x_mean = torch.clamp(p_x_mean, min=0.+1./512., max=1.-1./512.)
-        p_x_var = self.p_x_var(self.F_x_layers(z))
+        p_x_var = self.p_x_var(F_z) + 1e-7
 
         return p_x_mean, p_x_var
 
@@ -117,7 +119,7 @@ class CopulaVAEWithNormals(BaseCopulaVAE):
         )
         self.p_x_var = nn.Sequential(
             nn.Linear(300, np.prod(self.input_shape)),
-            nn.Hardtanh(min_val=-4.5, max_val=0)
+            nn.Softplus()
         )
 
         # weights initialization

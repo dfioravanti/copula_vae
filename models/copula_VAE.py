@@ -34,7 +34,7 @@ class BaseCopulaVAE(BaseVAE):
 
         batch_size = x.shape[0]
 
-        L_x = self._compute_L_x(x, batch_size)
+        L_x = self.compute_L_x(x, batch_size)
 
         s = sampling_from_gausiann_copula(L_x, batch_size, self.dimension_latent_space)
 
@@ -49,7 +49,7 @@ class BaseCopulaVAE(BaseVAE):
 
         return self.F_x_layers(z)
 
-    def _compute_L_x(self, x, batch_size):
+    def compute_L_x(self, x, batch_size):
 
         idx_trn = np.tril_indices(self.dimension_latent_space)
         idx_diag = np.diag_indices(self.dimension_latent_space)

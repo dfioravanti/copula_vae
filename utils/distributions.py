@@ -1,5 +1,6 @@
 
 import math
+import numpy as np
 
 import torch
 
@@ -28,7 +29,7 @@ def gaussian_cdf(means, sigmas, values):
 
 def log_normal_by_component(x, mean, log_var, average=False):
 
-    log_normal = -0.5 * (log_var + torch.pow(x - mean, 2) / torch.exp(log_var))
+    #log_normal = -0.5 * np.log(2*np.pi) - log_var + torch.pow(x - mean, 2) / torch.exp(log_var))
 
     if average:
         return torch.mean(log_normal)

@@ -52,7 +52,7 @@ class BaseCopulaVAE(BaseVAE):
         F_z = self.F_x_layers(z)
 
         p_x_mean = self.p_x_mean(F_z)
-        p_x_mean = torch.clamp(p_x_mean, min=0.+1./512., max=1.-1./512.)
+        p_x_mean = torch.clamp(p_x_mean, min=0., max=1.)
         p_x_var = self.p_x_var(F_z) + 1e-7
 
         return p_x_mean, p_x_var

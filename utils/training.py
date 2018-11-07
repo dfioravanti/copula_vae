@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from utils.plot_utils import plot_grid_images_file
-from utils.distributions import log_Logistic_256
+from utils.distributions import log_Logistic_256, log_normal_by_component
 
 
 def train_epoch(model,
@@ -127,11 +127,13 @@ def calculate_loss(xs, L_x, p_x_mean, p_x_logvar, beta):
     ixd_diag = np.diag_indices(k)
     diag_L_x = L_x[:, ixd_diag[0], ixd_diag[1]]
 
-    RE = log_Logistic_256(xs, p_x_mean, p_x_logvar, average=True, dim=1)
+    RE = log_Logistic_256(xs, p_x_mean, p_x_logvar, average=False, dim=1)
     RE = torch.mean(RE)
+
     tr_R = torch.sum(L_x ** 2, dim=(1, 2))
     tr_log_L = torch.sum(torch.log(diag_L_x), dim=1)
     KL = torch.mean((tr_R - k) / 2 - tr_log_L)
+
     return RE + beta * KL, RE, KL
 
 

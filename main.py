@@ -1,6 +1,7 @@
 import argparse
 import random
 import pathlib
+import json
 
 from loaders import load_funtions
 from utils.training import train_on_dataset
@@ -70,16 +71,16 @@ parser.add_argument('--output_dir', type=str, default='./outputs',
                     help='Location of the output directory')
 
 args = parser.parse_args()
-args.cuda = args.cuda and torch.cuda.is_available()
+args_as_json = json.dumps(vars(args))
 
-if args.verbose:
-    print(f'Cuda is {args.cuda}')
-    print(f'Using as loss function: {args.loss}')
-    print(f'Using {args.prior} as prior')
+args.cuda = args.cuda and torch.cuda.is_available()
+args.output_dir = pathlib.Path(args.output_dir) / args.dataset_name
+args.output_dir.mkdir(parents=True, exist_ok=True)
+
+with open(args.output_dir / 'config.json', 'w') as f:
+    f.write(args_as_json)
 
 args.loss = choose_loss_function(args.loss)
-args.output_dir = pathlib.Path(args.output_dir)
-args.output_dir.mkdir(parents=True, exist_ok=True)
 
 if args.warmup == 0:
     args.warmup = None
@@ -91,7 +92,6 @@ torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
-
 
 def main(args):
 
@@ -123,7 +123,6 @@ def main(args):
                                                          loss=args.loss,
                                                          epochs=args.epochs,
                                                          warmup=args.warmup,
-                                                         verbose=args.verbose,
                                                          early_stopping_tolerance=args.early_stopping_epochs,
                                                          device=args.device,
                                                          output_dir=args.output_dir)

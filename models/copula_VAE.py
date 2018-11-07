@@ -161,6 +161,8 @@ class CopulaVAE(BaseCopulaVAE):
         self.F_x_layers = nn.Sequential(
             nn.Linear(self.dimension_latent_space, 300),
             nn.ReLU(),
+            nn.Linear(300, 300),
+            nn.ReLU(),
             nn.Linear(300, np.prod(self.input_shape)),
             nn.Sigmoid()
         )

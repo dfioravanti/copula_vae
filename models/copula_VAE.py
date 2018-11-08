@@ -4,9 +4,10 @@ import numpy as np
 
 import torch
 from torch import nn
-from utils.nn import OneToOne, GatedDense
+from utils.nn import OneToOne, GatedDense, Flatten
 from utils.copula_sampling import sampling_from_gausiann_copula
 from utils.distributions import gaussian_icdf
+from utils.utils_conv import compute_final_convolution_shape, build_convolutional_blocks
 
 
 class BaseCopulaVAE(BaseVAE):
@@ -113,6 +114,72 @@ class CopulaVAEWithNormals(BaseCopulaVAE):
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
                 nn.init.constant_(m.bias, 0)
+
+
+class CopulaVAEWithNormalsConvDecoder(BaseCopulaVAE):
+
+    def __init__(self,
+                 dimension_latent_space,
+                 input_shape,
+                 encoder_output_size=300,
+                 device=torch.device("cpu")):
+
+        super(CopulaVAEWithNormalsConvDecoder, self).__init__(dimension_latent_space=dimension_latent_space,
+                                                              input_shape=input_shape,
+                                                              device=device)
+
+        # Variables
+
+        nb_channel_in = self.input_shape[0]
+        self.encoder_output_size = encoder_output_size
+        self.number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
+
+        kernel_size = 4
+        number_blocks = 2
+        nb_channel = 32
+        maxpolling = True
+        conv_output_shape = compute_final_convolution_shape(self.input_shape[1], self.input_shape[2],
+                                                            number_blocks, maxpolling, kernel_size)
+
+        # Encoder q(s | x)
+        # L(x) without the final activation function
+
+        self.L_layers = build_convolutional_blocks(number_blocks, nb_channel_in, nb_channel, maxpolling, kernel_size)
+        self.L_layers.add_module('flatten_0', Flatten())
+        self.L_layers.add_module('linear_0',
+                                 nn.Linear(nb_channel * conv_output_shape[0] * conv_output_shape[1],
+                                           self.number_neurons_L))
+
+
+        # Decoder p(x|s)
+
+        # F_l(s) for now we assume that everything is gaussian
+
+        self.mean_z = nn.Linear(self.dimension_latent_space, self.dimension_latent_space)
+        self.var_z = nn.Sequential(
+            nn.Linear(self.dimension_latent_space, self.dimension_latent_space),
+            nn.Softplus()
+        )
+
+        # F(z)
+
+        self.F_x_layers = nn.Sequential(
+            nn.Linear(self.dimension_latent_space, 300),
+            nn.ReLU(),
+            nn.Linear(300, np.prod(self.input_shape)),
+            nn.Sigmoid()
+        )
+
+        # weights initialization
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_normal_(m.weight)
+                nn.init.constant_(m.bias, 0)
+
+    def compute_L_x(self, x, batch_size):
+
+        x = x.view((-1, ) + self.input_shape)
+        return super(CopulaVAEWithNormalsConvDecoder, self).compute_L_x(x, batch_size)
 
 
 class CopulaVAE(BaseCopulaVAE):

@@ -8,7 +8,7 @@ from utils.training import train_on_dataset
 from utils.parsing import choose_loss_function
 
 from models.VAE import VAE
-from models.copula_VAE import CopulaVAEWithNormals, CopulaVAE
+from models.copula_VAE import CopulaVAEWithNormals, CopulaVAE, CopulaVAEWithNormalsConvDecoder
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 
 import numpy as np
@@ -105,7 +105,7 @@ def main(args):
                     device=args.device)
 
     if args.prior == 'gaussian_copula':
-        model = CopulaVAEWithNormals(dimension_latent_space=args.s_size,
+        model = CopulaVAEWithNormalsConvDecoder(dimension_latent_space=args.s_size,
                                      input_shape=input_shape,
                                      encoder_output_size=300,
                                      device=args.device)

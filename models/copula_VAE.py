@@ -4,10 +4,11 @@ import numpy as np
 
 import torch
 from torch import nn
-from utils.nn import OneToOne, GatedDense, Flatten
+from utils.nn import OneToOne, Flatten, Reshape
 from utils.copula_sampling import sampling_from_gausiann_copula
 from utils.distributions import gaussian_icdf
-from utils.utils_conv import compute_final_convolution_shape, build_convolutional_blocks
+from utils.utils_conv import compute_final_convolution_shape, build_convolutional_blocks,\
+                             compute_final_deconv_shape, build_deconvolutional_blocks
 
 
 class BaseCopulaVAE(BaseVAE):
@@ -163,12 +164,25 @@ class CopulaVAEWithNormalsConvDecoder(BaseCopulaVAE):
 
         # F(z)
 
+        decoder_in_shape = (1, 7, 7)
+        number_blocks_deconv = 2
+        deconv_output_shape = compute_final_deconv_shape(decoder_in_shape[1], decoder_in_shape[2],
+                                                         number_blocks=number_blocks_deconv, kernel_size=kernel_size)
+        dim_decov_out = np.prod(deconv_output_shape)
+
         self.F_x_layers = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, 300),
+            nn.Linear(self.dimension_latent_space, np.prod(decoder_in_shape)),
             nn.ReLU(),
-            nn.Linear(300, np.prod(self.input_shape)),
-            nn.Sigmoid()
         )
+        self.F_x_layers.add_module('reshape', Reshape(decoder_in_shape))
+        self.F_x_layers.add_module('deconv', build_deconvolutional_blocks(number_blocks_deconv,
+                                                                          nb_channels_in=decoder_in_shape[0],
+                                                                          nb_channels=nb_channel,
+                                                                          kernel_size=kernel_size))
+
+        self.F_x_layers.add_module('flatten_out', Flatten())
+        self.F_x_layers.add_module('dense_out', nn.Linear(nb_channel * dim_decov_out, np.prod(self.input_shape)))
+        self.F_x_layers.add_module('sigmoid_out', nn.Sigmoid())
 
         # weights initialization
         for m in self.modules():

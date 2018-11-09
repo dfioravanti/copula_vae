@@ -14,6 +14,7 @@ def train_epoch(model,
                 loader,
                 optimizer,
                 beta,
+                loss_function,
                 device=torch.device("cpu"),
                 output_dir=None):
     model.train()
@@ -32,7 +33,7 @@ def train_epoch(model,
         optimizer.zero_grad()
 
         xs = xs.view(loader.batch_size, -1).to(device)
-        xs_reconstructed, L_x, p_x_mean, p_x_var = model(xs)
+        xs_reconstructed, L_x = model(xs)
 
         if batch_idx == 0 and output_dir is not None:
 
@@ -43,9 +44,9 @@ def train_epoch(model,
                                 output_dir)
 
         loss, reconstruction_error, KL = calculate_loss(xs,
+                                                        xs_reconstructed,
                                                         L_x,
-                                                        p_x_mean,
-                                                        p_x_var,
+                                                        loss_function,
                                                         beta=beta)
         loss.backward()
         optimizer.step()
@@ -64,6 +65,7 @@ def train_epoch(model,
 def validation_epoch(model,
                      beta,
                      loader,
+                     loss_function,
                      device):
     model.eval()
 
@@ -73,12 +75,12 @@ def validation_epoch(model,
 
     for batch_idx, (xs, _) in enumerate(loader):
         xs = xs.view(loader.batch_size, -1).to(device)
-        xs_reconstructed, L_x, p_x_mean, p_x_var = model(xs)
+        xs_reconstructed, L_x = model(xs)
 
         loss, reconstruction_error, KL = calculate_loss(xs,
+                                                        xs_reconstructed,
                                                         L_x,
-                                                        p_x_mean,
-                                                        p_x_var,
+                                                        loss_function,
                                                         beta=beta)
 
         batch_losses[batch_idx] = loss
@@ -120,20 +122,17 @@ def plot_reconstruction(xs,
                           filename=filename)
 
 
-def calculate_loss(xs, L_x, p_x_mean, p_x_logvar, beta):
+def calculate_loss(xs, xs_reconstructed, L_x, loss_function, beta):
 
     k = L_x.shape[1]
 
     ixd_diag = np.diag_indices(k)
     diag_L_x = L_x[:, ixd_diag[0], ixd_diag[1]]
 
-    RE = log_Logistic_256(xs, p_x_mean, p_x_logvar, average=False, dim=1)
-    RE = torch.mean(RE)
-
+    RE = loss_function(xs, xs_reconstructed)
     tr_R = torch.sum(L_x ** 2, dim=(1, 2))
     tr_log_L = torch.sum(torch.log(diag_L_x), dim=1)
     KL = torch.mean((tr_R - k) / 2 - tr_log_L)
-
     return RE + beta * KL, RE, KL
 
 
@@ -141,6 +140,7 @@ def train_on_dataset(model,
                      loader_train,
                      loader_validation,
                      optimizer,
+                     loss,
                      epochs=50,
                      warmup=None,
                      early_stopping_tolerance=10,

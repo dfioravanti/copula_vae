@@ -121,6 +121,7 @@ def main(args):
                                                          loader_validation=validation_loader,
                                                          optimizer=Adam(model.parameters(), lr=args.lr),
                                                          epochs=args.epochs,
+                                                         loss=args.loss,
                                                          warmup=args.warmup,
                                                          early_stopping_tolerance=args.early_stopping_epochs,
                                                          device=args.device,

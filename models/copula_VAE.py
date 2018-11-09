@@ -21,18 +21,17 @@ class BaseCopulaVAE(BaseVAE):
                  device=torch.device("cpu")):
 
         super(BaseCopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
-                                        input_shape=input_shape,
-                                        device=device)
+                                            input_shape=input_shape,
+                                            device=device)
 
     def forward(self, x):
 
         s_x, L_x = self.q_s(x)
 
         # x_mean = p(x|z)
-        p_x_mean, p_x_var = self.p_x(s_x)
-        x_recontructed = p_x_mean
+        x_recontructed = self.p_x(s_x)
 
-        return x_recontructed, L_x, p_x_mean, p_x_var
+        return x_recontructed, L_x
 
     def q_s(self, x):
 
@@ -55,13 +54,7 @@ class BaseCopulaVAE(BaseVAE):
 
         z = self.p_z(s)
 
-        F_z = self.F_x_layers(z)
-
-        p_x_mean = self.p_x_mean(F_z)
-        p_x_mean = torch.clamp(p_x_mean, min=0., max=1.)
-        p_x_var = self.p_x_var(F_z) + 1e-7
-
-        return p_x_mean, p_x_var
+        return self.F_x_layers(z)
 
     def compute_L_x(self, x, batch_size):
 

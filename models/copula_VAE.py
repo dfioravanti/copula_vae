@@ -42,12 +42,16 @@ class BaseCopulaVAE(BaseVAE):
 
         return s, L_x
 
+    def p_z(self, s):
+
+        mean_z, var_z = self.mean_z(s), self.var_z(s) + 1e-5
+        return gaussian_icdf(mean_z, var_z, s)
+
     def p_x(self, s):
 
         # F_l(s)
 
-        mean_z, var_z = self.mean_z(s), self.var_z(s) + 1e-5
-        z = gaussian_icdf(mean_z, var_z, s)
+        z = self.p_z(s)
 
         return self.F_x_layers(z)
 

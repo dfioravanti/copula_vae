@@ -78,7 +78,6 @@ def load_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, downl
 
     test_loader = torch.utils.data.DataLoader(
         datasets.MNIST(root_dir, train=False, transform=transforms.Compose([
-            transforms.ToTensor(),
             transform
         ])),
         batch_size=batch_size, shuffle=shuffle)

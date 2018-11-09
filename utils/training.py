@@ -8,6 +8,7 @@ from utils.plot_utils import plot_grid_images_file
 from utils.distributions import log_Logistic_256, log_normal_by_component
 
 
+
 def train_epoch(model,
                 epoch,
                 loader,
@@ -34,7 +35,6 @@ def train_epoch(model,
         xs_reconstructed, L_x, p_x_mean, p_x_var = model(xs)
 
         if batch_idx == 0 and output_dir is not None:
-            print(f'plotting')
 
             plot_reconstruction(xs[:10],
                                 xs_reconstructed[:10],
@@ -143,7 +143,6 @@ def train_on_dataset(model,
                      optimizer,
                      epochs=50,
                      warmup=None,
-                     verbose=True,
                      early_stopping_tolerance=10,
                      device=torch.device("cpu"),
                      output_dir=None):
@@ -158,40 +157,45 @@ def train_on_dataset(model,
     val_RE = np.zeros_like(train_loss)
     val_KL = np.zeros_like(train_loss)
 
-    for epoch in range(epochs):
+    path_output_file = output_dir / 'output.txt'
 
-        beta = compute_beta(epoch, warmup)
-        if verbose:
-            print(f'Training with beta = {beta}')
+    with open(path_output_file, 'w', buffering=1) as f:
 
-        train_loss[epoch], train_RE[epoch], train_KL[epoch] = train_epoch(model=model,
-                                                                        loader=loader_train,
-                                                                        optimizer=optimizer,
-                                                                        epoch=epoch,
-                                                                        beta=beta,
-                                                                        device=device,
-                                                                        output_dir=output_dir)
+        for epoch in range(epochs):
 
-        val_loss[epoch], val_RE[epoch], val_KL[epoch] = validation_epoch(model=model,
-                                                                       beta=beta,
-                                                                       loader=loader_validation,
-                                                                       device=device)
+            beta = compute_beta(epoch, warmup)
 
-        if verbose:
-            print(f'epoch: {epoch}/{epochs}\n'
-                  f'train loss: {train_loss[epoch]} and val loss: {val_loss[epoch]}\n'
-                  f'train RE: {train_RE[epoch]} and val RE: {val_RE[epoch]}\n'
-                  f'train KL: {train_KL[epoch]} and val KL: {val_KL[epoch]}\n')
+            f.write(f'Training with beta = {beta}\n')
 
-        if val_loss[epoch] < best_loss:
+            train_loss[epoch], train_RE[epoch], train_KL[epoch] = train_epoch(model=model,
+                                                                            loader=loader_train,
+                                                                            optimizer=optimizer,
+                                                                            loss_function=loss,
+                                                                            epoch=epoch,
+                                                                            beta=beta,
+                                                                            device=device,
+                                                                            output_dir=output_dir)
 
-            early_stopping_strikes = 0
-            best_loss = val_loss[epoch]
+            val_loss[epoch], val_RE[epoch], val_KL[epoch] = validation_epoch(model=model,
+                                                                           loss_function=loss,
+                                                                           beta=beta,
+                                                                           loader=loader_validation,
+                                                                           device=device)
 
-        elif warmup is not None and epoch > warmup:
+            f.write(f'epoch: {epoch}/{epochs}\n'
+                    f'train loss: {train_loss[epoch]} and val loss: {val_loss[epoch]}\n'
+                    f'train RE: {train_RE[epoch]} and val RE: {val_RE[epoch]}\n'
+                    f'train KL: {train_KL[epoch]} and val KL: {val_KL[epoch]}\n\n')
 
-            early_stopping_strikes += 1
-            if early_stopping_strikes >= early_stopping_tolerance:
-                break
+            if val_loss[epoch] < best_loss:
+
+                early_stopping_strikes = 0
+                best_loss = val_loss[epoch]
+
+            elif warmup is not None and epoch > warmup:
+
+                early_stopping_strikes += 1
+                if early_stopping_strikes >= early_stopping_tolerance:
+                    break
 
     return model, (train_loss, train_RE, train_KL), (val_loss, val_RE, val_KL)

@@ -12,6 +12,17 @@ class Flatten(nn.Module):
         return input.view(input.size(0), -1)
 
 
+class Reshape(nn.Module):
+
+    def __init__(self, shape):
+        super(Reshape, self).__init__()
+
+        self.shape = shape
+
+    def forward(self, input):
+        return input.view((-1,) + self.shape)
+
+
 class GatedDense(nn.Module):
     def __init__(self, input_size, output_size):
         super(GatedDense, self).__init__()

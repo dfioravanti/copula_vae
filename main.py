@@ -48,7 +48,7 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
 parser.add_argument('--s_size', type=int, default=40, metavar='M1',
                     help='latent space size (default: 40)')
 
-parser.add_argument('--architecture', type=str, default='standard', metavar='P',
+parser.add_argument('--architecture', type=str, default='gaussian_copula', metavar='P',
                     help='architecture: standard, gaussian_copula')
 
 # experiment
@@ -108,9 +108,10 @@ def main(args):
                     device=args.device)
 
     if args.architecture == 'gaussian_copula':
-        model = CopulaVAEWithNormalsConvDecoder(dimension_latent_space=args.s_size,
+        model = CopulaVAEWithNormals(dimension_latent_space=args.s_size,
                                      input_shape=input_shape,
                                      encoder_output_size=300,
+                                     dataset_type=dataset_type,
                                      device=args.device)
 
     if torch.cuda.device_count() > 1:

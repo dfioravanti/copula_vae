@@ -109,18 +109,7 @@ def plot_reconstruction(xs,
                           filename=filename)
 
 
-def calculate_loss(xs, xs_reconstructed, L_x, loss_function, beta):
 
-    k = L_x.shape[1]
-
-    ixd_diag = np.diag_indices(k)
-    diag_L_x = L_x[:, ixd_diag[0], ixd_diag[1]]
-
-    RE = loss_function(xs, xs_reconstructed)
-    tr_R = torch.sum(L_x ** 2, dim=(1, 2))
-    tr_log_L = torch.sum(torch.log(diag_L_x), dim=1)
-    KL = torch.mean((tr_R - k) / 2 - tr_log_L)
-    return RE + beta * KL, RE, KL
 
 
 def train_on_dataset(model,

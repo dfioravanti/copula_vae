@@ -11,6 +11,8 @@ from torchvision import transforms, datasets
 
 from loaders import BinaryMNISTDataset
 
+from utils.utils_load_dataset import ToBinary, SubsetSampler
+
 
 def load_binary_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
 
@@ -40,10 +42,25 @@ def load_binary_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None
                                          batch_size=batch_size,
                                          shuffle=False)
 
-    return train_loader, test_loader, valid_loader
+    dataset_type = "binary"
+
+    return train_loader, test_loader, valid_loader, dataset_type
 
 
-def load_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
+def load_MNIST(root_dir=None, dinamicaly_binarized=True,
+               batch_size=20, transform=None, shuffle=True, download=True):
+
+    """
+    This function load the MNIST dataset
+
+    :param root_dir: root directory where to store the dataset
+    :param dinamicaly_binarized: If the dataset should dinamicaly binarized as in [ref]
+    :param batch_size: see datasets.MNIST
+    :param transform: see datasets.MNIST
+    :param shuffle: Should the dataset be shuffled
+    :param download: see datasets.MNIST
+    :return:
+    """
 
     if root_dir is None:
         root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets/MNIST'
@@ -52,10 +69,25 @@ def load_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, downl
         transform = transforms.ToTensor()
 
     train_dataset = datasets.MNIST(root_dir, train=True, download=download,
-                                   transform=transform)
+                                          transform=transform)
 
-    valid_dataset = datasets.MNIST(root_dir, train=True, download=download,
-                                   transform=transform)
+    test_dataset = datasets.MNIST(root_dir, train=False, download=download,
+                                          transform=transform)
+
+    if dinamicaly_binarized:
+        dataset_type = "binary"
+        train_data = torch.from_numpy(np.random.binomial(1, train_dataset.train_data.numpy() / 255))
+        test_data = torch.from_numpy(np.random.binomial(1, test_dataset.test_data.numpy() / 255))
+    else:
+        dataset_type = "continuous"
+        train_data = torch.from_numpy(train_dataset.train_data.numpy() / 255)
+        test_data = torch.from_numpy(test_dataset.test_data.numpy() / 255)
+
+    train_labels = train_dataset.train_labels
+    test_labels = test_dataset.test_labels
+
+    train_dataset = data_utils.TensorDataset(train_data, train_labels)
+    test_dataset = data_utils.TensorDataset(test_data, test_labels)
 
     size_train = len(train_dataset)
     indices = list(range(size_train))
@@ -65,24 +97,22 @@ def load_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, downl
         np.random.shuffle(indices)
 
     train_idx, valid_idx = indices[split:], indices[:split]
-    train_sampler = data_utils.SubsetRandomSampler(train_idx)
-    valid_sampler = data_utils.SubsetRandomSampler(valid_idx)
+    train_sampler = SubsetSampler(train_idx)
+    valid_sampler = SubsetSampler(valid_idx)
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, sampler=train_sampler, shuffle=shuffle
+        train_dataset, batch_size=batch_size, sampler=train_sampler, shuffle=False,
     )
 
     valid_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=batch_size, sampler=valid_sampler, shuffle=shuffle
+        train_dataset, batch_size=batch_size, sampler=valid_sampler, shuffle=False
     )
 
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(root_dir, train=False, transform=transforms.Compose([
-            transform
-        ])),
-        batch_size=batch_size, shuffle=shuffle)
+        test_dataset, batch_size=batch_size, shuffle=shuffle
+    )
 
-    return train_loader, test_loader, valid_loader
+    return train_loader, test_loader, valid_loader, dataset_type
 
 
 def load_FashionMNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
@@ -255,13 +285,14 @@ def load_cifar10(root_dir=None, batch_size=20, shuffle=True, transform=None, dow
 
     return train_loader, test_loader, valid_loader
 
+
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
 
-    train_loader, _, _, = load_binary_MNIST('../datasets/', batch_size=1, download=False)
+    train_loader, _, _, _ = load_MNIST('../datasets/', dinamicaly_binarized=True, batch_size=1, download=False, shuffle=False)
 
-    sample = next(iter(train_loader))
+    sample = next(iter(train_loader))[0]
     print(sample.shape)
     sample = sample.reshape((28, 28))
     plt.imshow(sample, cmap='gray')

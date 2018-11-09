@@ -48,8 +48,8 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
 parser.add_argument('--s_size', type=int, default=40, metavar='M1',
                     help='latent space size (default: 40)')
 
-parser.add_argument('--prior', type=str, default='gaussian_copula', metavar='P',
-                    help='prior: standard, gaussian_copula')
+parser.add_argument('--architecture', type=str, default='standard', metavar='P',
+                    help='architecture: standard, gaussian_copula')
 
 # experiment
 parser.add_argument('--loss', type=str, default='L2',
@@ -93,18 +93,20 @@ np.random.seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
+
 def main(args):
 
-    train_loader, validation_loader, test_loader, input_shape = load_dataset(dataset_name=args.dataset_name,
-                                                                             batch_size=args.batch_size)
+    train_loader, validation_loader, test_loader, \
+    input_shape, dataset_type = load_dataset(dataset_name=args.dataset_name,
+                                             batch_size=args.batch_size)
 
-    if args.prior == 'standard':
+    if args.architecture == 'standard':
         model = VAE(dimension_latent_space=args.s_size,
                     input_shape=input_shape,
                     encoder_output_size=300,
                     device=args.device)
 
-    if args.prior == 'gaussian_copula':
+    if args.architecture == 'gaussian_copula':
         model = CopulaVAEWithNormalsConvDecoder(dimension_latent_space=args.s_size,
                                      input_shape=input_shape,
                                      encoder_output_size=300,
@@ -141,7 +143,7 @@ def load_dataset(dataset_name, batch_size=50):
 
     elif dataset_name == 'mnist':
 
-        train_loader, test_loader, validation_loader = load_funtions.load_MNIST(batch_size=batch_size, shuffle=False)
+        train_loader, test_loader, validation_loader, dataset_type = load_funtions.load_MNIST(batch_size=batch_size, shuffle=False)
         input_shape = (1, 28, 28)
 
     elif dataset_name == 'fashionmnist':
@@ -168,7 +170,7 @@ def load_dataset(dataset_name, batch_size=50):
     else:
         raise ValueError('Wrond dataset name')
 
-    return train_loader, validation_loader, test_loader, input_shape
+    return train_loader, validation_loader, test_loader, input_shape, dataset_type
 
 
 def save_results(model, results_train, results_val, output_dir):

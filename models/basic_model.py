@@ -7,8 +7,6 @@ import torch
 import torch.nn as nn
 
 
-
-
 class BaseVAE(nn.Module):
 
     __metaclass__ = abc.ABCMeta
@@ -16,6 +14,7 @@ class BaseVAE(nn.Module):
     def __init__(self,
                  dimension_latent_space,
                  input_shape,
+                 dataset_type,
                  device=torch.device("cpu")):
 
         super(BaseVAE, self).__init__()
@@ -24,12 +23,11 @@ class BaseVAE(nn.Module):
         self.input_shape = input_shape
         self.device = device
 
-    def sampling_normal_with_reparametrization(self, mean, log_variance):
+        if dataset_type not in ['continuous', 'gray', 'binary']:
+            raise ValueError(f'We do not support {dataset_type} as dataset_type!')
 
-        zero_one_normal = torch.randn(self.dimension_latent_space, dtype=log_variance.dtype).to(self.device)
-        variance = log_variance.exp()
+        self.dataset_type = dataset_type
 
-        return zero_one_normal.mul(variance).add(mean)
 
     @abc.abstractmethod
     def calculate_loss(self, xs, beta=1, loss=nn.MSELoss()):

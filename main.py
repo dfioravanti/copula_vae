@@ -104,6 +104,7 @@ def main(args):
         model = VAE(dimension_latent_space=args.s_size,
                     input_shape=input_shape,
                     encoder_output_size=300,
+                    dataset_type=dataset_type,
                     device=args.device)
 
     if args.architecture == 'gaussian_copula':
@@ -123,7 +124,6 @@ def main(args):
                                                          loader_validation=validation_loader,
                                                          optimizer=Adam(model.parameters(), lr=args.lr),
                                                          epochs=args.epochs,
-                                                         loss=args.loss,
                                                          warmup=args.warmup,
                                                          early_stopping_tolerance=args.early_stopping_epochs,
                                                          device=args.device,
@@ -175,15 +175,15 @@ def load_dataset(dataset_name, batch_size=50):
 
 def save_results(model, results_train, results_val, output_dir):
 
-    epoch_train_loss, epoch_train_RE, epoch_train_KLs = results_train
-    epoch_val_loss, epoch_val_RE, epoch_val_KLs = results_val
+    epoch_train_loss, epoch_train_NLL, epoch_train_KLs = results_train
+    epoch_val_loss, epoch_val_NLL, epoch_val_KLs = results_val
 
     torch.save(model.state_dict(), output_dir / 'model')
     np.savetxt(output_dir / "loss_train.txt", epoch_train_loss, delimiter='\t')
-    np.savetxt(output_dir / "RE_train.txt", epoch_train_RE, delimiter='\t')
+    np.savetxt(output_dir / "NLL_train.txt", epoch_train_NLL, delimiter='\t')
     np.savetxt(output_dir / "KL_train.txt", epoch_train_KLs, delimiter='\t')
     np.savetxt(output_dir / "loss_val.txt", epoch_val_loss, delimiter='\t')
-    np.savetxt(output_dir / "RE_val.txt", epoch_val_RE, delimiter='\t')
+    np.savetxt(output_dir / "NLL_val.txt", epoch_val_NLL, delimiter='\t')
     np.savetxt(output_dir / "KL_val.txt", epoch_val_KLs, delimiter='\t')
 
 

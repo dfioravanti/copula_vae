@@ -86,8 +86,8 @@ def load_MNIST(root_dir=None, dinamicaly_binarized=True,
     train_labels = train_dataset.train_labels
     test_labels = test_dataset.test_labels
 
-    train_dataset = data_utils.TensorDataset(train_data, train_labels)
-    test_dataset = data_utils.TensorDataset(test_data, test_labels)
+    train_dataset = data_utils.TensorDataset(train_data.float(), train_labels)
+    test_dataset = data_utils.TensorDataset(test_data.float(), test_labels)
 
     size_train = len(train_dataset)
     indices = list(range(size_train))

@@ -4,10 +4,23 @@ import numpy as np
 
 import torch
 
+# We need this to avoid numerical instability
+tollerance = 1e-5
 
 def gaussian_icdf(means, sigmas, values):
 
-    values = torch.clamp(values, min=0.0001, max=0.9999)
+    """
+    Compute the inverse cdf of a gaussian.
+    The clamp is there to avoid numerical instability
+
+    :param means:
+    :param sigmas:
+    :param values:
+
+    :return:
+    """
+
+    values = torch.clamp(values, min=0 + tollerance, max=1 - tollerance)
 
     return means + sigmas * torch.erfinv(2 * values - 1) * math.sqrt(2)
 
@@ -46,10 +59,70 @@ def log_normal_standard(x, average=False):
     else:
         return torch.sum(log_normal)
 
+# Density functions
 
-def log_Logistic_256(x, mean, logvar, average=False, reduce=True, dim=None):
 
-    bin_size = 1. / 256.
+def log_density_Normal(x, mean, log_var, average=False, reduce_dim=None):
+
+    """
+
+    :param x:
+    :param mean:
+    :param log_var:
+    :param average:
+    :param reduce_dim:
+    :return:
+    """
+
+    log_densities = -0.5 * (log_var + torch.pow(x - mean, 2) / torch.exp(log_var))
+
+    if average:
+        return torch.mean(log_densities, reduce_dim)
+    else:
+        return torch.sum(log_densities, reduce_dim)
+
+
+def log_density_standard_Normal(x, average=False, reduce_dim=None):
+
+    """
+
+    :param x:
+    :param average:
+    :param reduce_dim:
+    :return:
+    """
+
+    log_densities = -0.5 * torch.pow(x, 2)
+
+    if average:
+        return torch.mean(log_densities, reduce_dim)
+    else:
+        return torch.sum(log_densities, reduce_dim)
+
+
+def log_density_Bernoulli(x, mean, average=False, reduce_dim=None):
+
+    """
+
+    :param x:
+    :param mean:
+    :param average:
+    :param reduce_dim:
+    :return:
+    """
+
+    ps = torch.clamp(mean, min=(0 + tollerance), max=(1 - tollerance))
+    qs = 1-ps
+
+    log_densities = x*torch.log(ps) + (1-x)*torch.log(qs)
+
+    if average:
+        return torch.mean(log_densities, reduce_dim)
+    else:
+        return torch.sum(log_densities, reduce_dim)
+
+
+def log_density_discretized_Logistic(x, mean, logvar, bin_size=1/256, average=False, reduce=True, reduce_dim=None):
 
     # implementation like https://github.com/openai/iaf/blob/master/tf_utils/distributions.py#L28
     scale = torch.exp(logvar)
@@ -61,8 +134,8 @@ def log_Logistic_256(x, mean, logvar, average=False, reduce=True, dim=None):
 
     if reduce:
         if average:
-            return torch.mean(log_logist_256, dim)
+            return torch.mean(log_logist_256, reduce_dim)
         else:
-            return torch.sum(log_logist_256, dim)
+            return torch.sum(log_logist_256, reduce_dim)
     else:
         return log_logist_256

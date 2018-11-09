@@ -23,11 +23,11 @@ class SubsetSampler(Sampler):
         indices (sequence): a sequence of indices
     """
 
-    def __init__(self, indices):
-        self.indices = indices
+    def __init__(self, mask):
+        self.mask = mask
 
     def __iter__(self):
-        return (self.indices[i] for i in self.indices)
+        return (self.mask[i] for i in torch.arange(start=0, end=len(self.mask)))
 
     def __len__(self):
-        return len(self.indices)
+        return len(self.mask)

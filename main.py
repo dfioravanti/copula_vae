@@ -74,7 +74,14 @@ args = parser.parse_args()
 args_as_json = json.dumps(vars(args))
 
 args.cuda = args.cuda and torch.cuda.is_available()
-args.output_dir = pathlib.Path(args.output_dir) / args.dataset_name
+
+if args.dynamic_binarization:
+    folder_name = f'{args.dataset_name}_bin'
+else:
+    folder_name = f'{args.dataset_name}'
+folder_name = f'{folder_name}_{args.architecture}_{args.s_size}'
+    
+args.output_dir = pathlib.Path(args.output_dir) / folder_name
 args.output_dir.mkdir(parents=True, exist_ok=True)
 
 with open(args.output_dir / 'config.json', 'w') as f:

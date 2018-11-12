@@ -64,7 +64,7 @@ parser.add_argument('--dataset_name', type=str, default='mnist', metavar='DN',
                     help='name of the dataset: binary_mnist, mnist, bedrooms,'
                          ' omniglot, cifar10, fashionmnist')
 
-parser.add_argument('--dynamic_binarization', action='store_true', default=False,
+parser.add_argument('--dynamic_binarization', action='store_true', default=True,
                     help='allow dynamic binarization')
 
 parser.add_argument('--output_dir', type=str, default='./outputs',
@@ -151,7 +151,9 @@ def load_dataset(dataset_name, batch_size=50):
 
     elif dataset_name == 'mnist':
 
-        train_loader, test_loader, validation_loader, dataset_type = load_funtions.load_MNIST(batch_size=batch_size, shuffle=False)
+        train_loader, test_loader, validation_loader, dataset_type = \
+            load_funtions.load_MNIST(batch_size=batch_size,
+            dynamic_binarization=args.dynamic_binarization, shuffle=False)
         input_shape = (1, 28, 28)
 
     elif dataset_name == 'fashionmnist':

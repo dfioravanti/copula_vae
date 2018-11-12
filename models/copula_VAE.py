@@ -7,7 +7,7 @@ from torch import nn
 
 from utils.nn import OneToOne, Flatten, Reshape, GatedDense
 from utils.copula_sampling import sampling_from_gausiann_copula
-from utils.distributions import gaussian_icdf, log_density_Bernoulli, log_density_discretized_Logistic
+from utils.distributions import gaussian_0_I_icdf, log_density_Bernoulli, log_density_discretized_Logistic
 from utils.utils_conv import compute_final_convolution_shape, build_convolutional_blocks,\
                              compute_final_deconv_shape, build_deconvolutional_blocks
 
@@ -43,11 +43,6 @@ class BaseCopulaVAE(BaseVAE):
         s = sampling_from_gausiann_copula(L_x, batch_size, self.dimension_latent_space)
 
         return s, L_x
-
-    def p_z(self, s):
-
-        mean_z, var_z = self.mean_z(s), self.var_z(s) + 1e-5
-        return gaussian_icdf(mean_z, var_z, s)
 
     def p_x(self, s):
 
@@ -197,6 +192,10 @@ class CopulaVAEWithNormals(BaseCopulaVAE):
             if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
                 nn.init.constant_(m.bias, 0)
+
+    def p_z(self, s):
+
+        return gaussian_0_I_icdf(s)
 
 
 class CopulaVAEWithNormalsConvDecoder(BaseCopulaVAE):

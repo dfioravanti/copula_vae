@@ -47,14 +47,14 @@ def load_binary_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None
     return train_loader, test_loader, valid_loader, dataset_type
 
 
-def load_MNIST(root_dir=None, dinamicaly_binarized=True,
+def load_MNIST(root_dir=None, dynamic_binarization=True,
                batch_size=20, transform=None, shuffle=True, download=True):
 
     """
     This function load the MNIST dataset
 
     :param root_dir: root directory where to store the dataset
-    :param dinamicaly_binarized: If the dataset should dinamicaly binarized as in [ref]
+    :param dynamic_binarization: If the dataset should dinamicaly binarized as in [ref]
     :param batch_size: see datasets.MNIST
     :param transform: see datasets.MNIST
     :param shuffle: Should the dataset be shuffled
@@ -74,7 +74,7 @@ def load_MNIST(root_dir=None, dinamicaly_binarized=True,
     test_dataset = datasets.MNIST(root_dir, train=False, download=download,
                                           transform=transform)
 
-    if dinamicaly_binarized:
+    if dynamic_binarization:
         dataset_type = "binary"
         train_data = torch.from_numpy(np.random.binomial(1, train_dataset.train_data.numpy() / 255))
         test_data = torch.from_numpy(np.random.binomial(1, test_dataset.test_data.numpy() / 255))
@@ -290,7 +290,7 @@ if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
 
-    train_loader, _, _, _ = load_MNIST('../datasets/', dinamicaly_binarized=True, batch_size=1, download=False, shuffle=False)
+    train_loader, _, _, _ = load_MNIST('../datasets/', dynamic_binarization=True, batch_size=1, download=False, shuffle=False)
 
     sample = next(iter(train_loader))[0]
     print(sample.shape)

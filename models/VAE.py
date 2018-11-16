@@ -26,34 +26,29 @@ class VAE(BaseVAE):
         # Encoder q(z|x)
 
         self.q_z_layers = nn.Sequential(
-            GatedDense(np.prod(self.input_shape), 300),
-            GatedDense(300, self.encoder_output_size)
+            nn.Linear(np.prod(self.input_shape), 300),
+            nn.Tanh(),
+            nn.Linear(300, 300),
+            nn.Tanh(),
         )
 
-        self.mean = nn.Linear(self.encoder_output_size, self.dimension_latent_space)
-        self.log_var = nn.Sequential(
-            nn.Linear(self.encoder_output_size, self.dimension_latent_space),
-            nn.Hardtanh(min_val=-6, max_val=2)
-        )
+        self.mean = nn.Linear(300, self.dimension_latent_space)
+        self.log_var = nn.Linear(300, self.dimension_latent_space)
 
         # Decoder p(x|z)
 
         self.p_x_layers = nn.Sequential(
-            GatedDense(self.dimension_latent_space, 300),
-            GatedDense(300, 300)
+            nn.Linear(self.dimension_latent_space, 300),
+            nn.Tanh(),
+            nn.Linear(300, 300),
+            nn.Tanh(),
         )
 
-        self.p_x_mean = nn.Sequential(
-            nn.Linear(300, np.prod(self.input_shape)),
-            nn.Sigmoid()
-        )
+        self.p_x_mean = nn.Linear(300, np.prod(self.input_shape))
 
         if not dataset_type == 'binary':
 
-            self.p_x_log_var = nn.Sequential(
-                nn.Linear(300, np.prod(self.input_shape)),
-                nn.Hardtanh(min_val=-4.5, max_val=0)
-            )
+            self.p_x_log_var = nn.Linear(300, np.prod(self.input_shape))
 
         # weights initialization
         for m in self.modules():

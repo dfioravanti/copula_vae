@@ -2,6 +2,7 @@
 import abc
 
 import numpy as np
+from scipy.special import logsumexp
 
 import torch
 import torch.nn as nn
@@ -30,12 +31,8 @@ class BaseVAE(nn.Module):
 
 
     @abc.abstractmethod
-    def calculate_loss(self, xs, beta=1, loss=nn.MSELoss()):
-        return
-
-    @abc.abstractmethod
-    def calculate_likelihood(self):
-        return
+    def calculate_loss(self, x, beta=1, average=True):
+        return None, None, None
 
     @abc.abstractmethod
     def calculate_lower_bound(self):
@@ -53,10 +50,43 @@ class BaseVAE(nn.Module):
     def get_decoder_layers(self):
         return
 
+    def calculate_likelihood(self, loader, number_samples, output_dir):
+
+        size_dataset = len(loader.dataset)
+        batch_size = loader.batch_size
+        output_file = output_dir / 'output.txt'
+
+        losses = np.zeros((size_dataset, number_samples))
+
+        with open(output_file, 'a', buffering=1) as f:
+
+            for i, (xs, _) in enumerate(loader):
+
+                xs = xs.view(batch_size, -1).to(self.device)
+
+                f.write(f'Computing likelihood for batch number {i}\n')
+
+                for j in range(number_samples):
+
+                    loss, _, _ = self.calculate_loss(xs)
+                    losses[i*batch_size:(i+1)*batch_size, j] = -loss.cpu().detach().numpy()
+
+            likelihood_x = logsumexp(losses, axis=1) - np.log(number_samples)
+
+            return np.mean(likelihood_x)
+
 
 if __name__ == '__main__':
 
-    test = BaseVAE(dimension_latent_space=1, input_shape=1)
-    log_variance = torch.tensor(1, dtype=torch.float32)
-    mean = torch.tensor(0, dtype=torch.float32)
-    print(test.sampling_normal_with_reparametrization(mean=mean, log_variance=log_variance))
+    from loaders.load_funtions import load_MNIST
+    from models.VAE import VAE
+
+    import pathlib
+
+    _, loader, _, dataset_type = load_MNIST('../datasets/')
+
+    output_dit = pathlib.Path('../outputs/')
+    input_shape = (1, 28, 28)
+
+    model = VAE(dimension_latent_space=20, input_shape=input_shape, dataset_type=dataset_type)
+    print(model.calculate_likelihood(loader, 10, output_dit))

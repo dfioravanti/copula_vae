@@ -48,7 +48,7 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
 parser.add_argument('--s_size', type=int, default=40, metavar='M1',
                     help='latent space size (default: 40)')
 
-parser.add_argument('--architecture', type=str, default='gaussian_copula', metavar='P',
+parser.add_argument('--architecture', type=str, default='standard', metavar='P',
                     help='architecture: standard, gaussian_copula')
 
 # experiment
@@ -56,8 +56,6 @@ parser.add_argument('--loss', type=str, default='L2',
                     help='loss function to be used: L1, L2, BCE')
 parser.add_argument('--S', type=int, default=5000, metavar='SLL',
                     help='number of samples used for approximating log-likelihood')
-parser.add_argument('--MB', type=int, default=100, metavar='MBLL',
-                    help='size of a mini-batch used for approximating log-likelihood')
 
 # dataset
 parser.add_argument('--dataset_name', type=str, default='mnist', metavar='DN',
@@ -137,7 +135,12 @@ def main(args):
                                                          device=args.device,
                                                          output_dir=args.output_dir)
 
-    save_results(model, results_train, results_val, args.output_dir)
+    results_test = model.calculate_likelihood(train_loader,
+                                              number_samples=args.S,
+                                              output_dir=args.output_dir
+    )
+
+    save_results(model, results_train, results_val, results_test, args.output_dir)
 
     print('Done')
 
@@ -153,7 +156,7 @@ def load_dataset(dataset_name, batch_size=50):
 
         train_loader, test_loader, validation_loader, dataset_type = \
             load_funtions.load_MNIST(batch_size=batch_size,
-            dynamic_binarization=args.dynamic_binarization, shuffle=False)
+                                     dynamic_binarization=args.dynamic_binarization, shuffle=False)
         input_shape = (1, 28, 28)
 
     elif dataset_name == 'fashionmnist':
@@ -183,10 +186,12 @@ def load_dataset(dataset_name, batch_size=50):
     return train_loader, validation_loader, test_loader, input_shape, dataset_type
 
 
-def save_results(model, results_train, results_val, output_dir):
+def save_results(model, results_train, results_val, results_test, output_dir):
 
     epoch_train_loss, epoch_train_NLL, epoch_train_KLs = results_train
     epoch_val_loss, epoch_val_NLL, epoch_val_KLs = results_val
+
+    results_test = np.expand_dims(results_test, axis=0)
 
     torch.save(model.state_dict(), output_dir / 'model')
     np.savetxt(output_dir / "loss_train.txt", epoch_train_loss, delimiter='\t')
@@ -195,6 +200,8 @@ def save_results(model, results_train, results_val, output_dir):
     np.savetxt(output_dir / "loss_val.txt", epoch_val_loss, delimiter='\t')
     np.savetxt(output_dir / "NLL_val.txt", epoch_val_NLL, delimiter='\t')
     np.savetxt(output_dir / "KL_val.txt", epoch_val_KLs, delimiter='\t')
+
+    np.savetxt(output_dir / "test.txt", results_test, delimiter='\t')
 
 
 if __name__ == '__main__':

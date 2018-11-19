@@ -69,7 +69,7 @@ class BaseVAE(nn.Module):
                 for j in range(number_samples):
 
                     loss, _, _ = self.calculate_loss(xs)
-                    losses[i*batch_size:(i+1)*batch_size, j] = -loss.cpu().detach().numpy()
+                    losses[i*batch_size:(i+1)*batch_size, j] = loss.cpu().detach().numpy()
 
             likelihood_x = logsumexp(losses, axis=1) - np.log(number_samples)
 
@@ -88,5 +88,8 @@ if __name__ == '__main__':
     output_dit = pathlib.Path('../outputs/')
     input_shape = (1, 28, 28)
 
-    model = VAE(dimension_latent_space=20, input_shape=input_shape, dataset_type=dataset_type)
-    print(model.calculate_likelihood(loader, 10, output_dit))
+    model = VAE(dimension_latent_space=50, input_shape=input_shape, dataset_type=dataset_type)
+    model.load_state_dict(torch.load('../outputs/mnist_bin_standard_50/model', map_location='cpu'))
+    model.eval()
+
+    print(model.calculate_likelihood(loader, 200, output_dit))

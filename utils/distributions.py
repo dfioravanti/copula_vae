@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 # We need this to avoid numerical instability
-tollerance = 1e-5
+tollerance = 1e-7
 
 
 def gaussian_icdf(means, sigmas, values):
@@ -119,21 +119,24 @@ def log_density_standard_Normal(x, average=False, reduce_dim=None):
         return torch.sum(log_densities, reduce_dim)
 
 
-def log_density_Bernoulli(x, mean, average=False, reduce_dim=None):
+def log_density_bernoulli(x, ps, average=False, reduce_dim=None):
 
     """
 
-    :param x:
-    :param mean:
-    :param average:
-    :param reduce_dim:
+    Function to compute the log density for a vector n given a vector of n probability.
+    We assume that all the components are iid Bernoulli with probability ps[i]
+
+    :param x: Values where we want to evaluate the log density
+    :param ps: The probability p for the ith component.
+    :param average: True if we should return the average density over x
+    :param reduce_dim: If we pass multiple xs we need to set this to 1 in order to average or sum correctly
     :return:
     """
 
-    ps = torch.clamp(mean, min=(0 + tollerance), max=(1 - tollerance))
+    ps = torch.clamp(ps, min=(0 + tollerance), max=(1 - tollerance))
     qs = 1-ps
 
-    log_densities = x*torch.log(ps) + (1-x)*torch.log(qs)
+    log_densities = x * torch.log(ps) + (1 - x) * torch.log(qs)
 
     if average:
         return torch.mean(log_densities, reduce_dim)

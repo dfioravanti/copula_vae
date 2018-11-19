@@ -7,7 +7,7 @@ from torch import nn
 
 from utils.nn import OneToOne, Flatten, Reshape, GatedDense
 from utils.copula_sampling import sampling_from_gausiann_copula
-from utils.distributions import gaussian_0_I_icdf, log_density_Bernoulli, log_density_discretized_Logistic
+from utils.distributions import gaussian_0_I_icdf, log_density_bernoulli, log_density_discretized_Logistic
 from utils.utils_conv import compute_final_convolution_shape, build_convolutional_blocks,\
                              compute_final_deconv_shape, build_deconvolutional_blocks
 
@@ -90,7 +90,7 @@ class BaseCopulaVAE(BaseVAE):
         x_mean, x_log_var, L_x = self.forward(x)
 
         if self.dataset_type == 'binary':
-            NLL = log_density_Bernoulli(x, x_mean, reduce_dim=1)
+            NLL = log_density_bernoulli(x, x_mean, reduce_dim=1)
         elif self.dataset_type == 'gray' or self.dataset_type == 'continuous':
             NLL = - log_density_discretized_Logistic(x, x_mean, x_log_var, reduce_dim=1)
 

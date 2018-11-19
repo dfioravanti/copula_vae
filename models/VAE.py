@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 from utils.nn import GatedDense
-from utils.distributions import log_density_Bernoulli, log_density_discretized_Logistic,\
+from utils.distributions import log_density_bernoulli, log_density_discretized_Logistic,\
                                 log_density_Normal, log_density_standard_Normal
 
 class VAE(BaseVAE):
@@ -128,19 +128,20 @@ class VAE(BaseVAE):
         x_mean, x_log_var, z_x, z_x_mean, z_x_log_var = self.forward(x)
 
         if self.dataset_type == 'binary':
-            NLL = log_density_Bernoulli(x, x_mean, reduce_dim=1)
+            RE = log_density_bernoulli(x, x_mean, reduce_dim=1)
         elif self.dataset_type == 'gray' or self.dataset_type == 'continuous':
-            NLL = - log_density_discretized_Logistic(x, x_mean, x_log_var, reduce_dim=1)
+            RE = - log_density_discretized_Logistic(x, x_mean, x_log_var, reduce_dim=1)
 
         log_p_z = self.log_desity_prior(z_x)
         log_q_z = log_density_Normal(z_x, z_x_mean, z_x_log_var, reduce_dim=1)
         KL = log_q_z - log_p_z
 
-        loss = -NLL + beta * KL
+        # We are going to minimise so we need to take -ELBO
+        loss = -RE + beta * KL
 
         if average:
             loss = torch.mean(loss)
-            NLL = torch.mean(NLL)
+            RE = torch.mean(RE)
             KL = torch.mean(KL)
 
-        return loss, NLL, KL
+        return loss, RE, KL

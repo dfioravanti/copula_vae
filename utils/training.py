@@ -29,6 +29,10 @@ def train_epoch(model,
 
         optimizer.zero_grad()
 
+        # TODO: move reshape inside the model.
+        # So if for some reason I decide to start with CNN it still works.
+        # Inputs and outputs should always be  of the original shape
+
         xs = xs.view(loader.batch_size, -1).to(device)
 
         if batch_idx == 0 and output_dir is not None:

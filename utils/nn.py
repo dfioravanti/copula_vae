@@ -44,7 +44,7 @@ class ICDF(nn.Module):
             raise ValueError(f'ICDF does not support {distribution}')
 
         self.means = Parameter(torch.Tensor(in_features))
-        self.sigmas = Parameter(torch.Tensor(in_features))
+        self.sigmas = torch.Tensor(in_features)
         self.distribution = distribution
 
     def reset_parameters(self):

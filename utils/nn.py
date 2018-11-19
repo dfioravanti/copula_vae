@@ -6,13 +6,24 @@ import torch.nn as nn
 from torch.nn import Parameter
 import torch.nn.functional as F
 
+from utils.inverse_distibutions import gaussian_icdf
+
 
 class Flatten(nn.Module):
+
+    """
+    Layer that flatters the input
+    """
+
     def forward(self, input):
         return input.view(input.size(0), -1)
 
 
 class Reshape(nn.Module):
+
+    """
+    Layer that reshapes a given input to a desired shape
+    """
 
     def __init__(self, shape):
         super(Reshape, self).__init__()
@@ -21,6 +32,30 @@ class Reshape(nn.Module):
 
     def forward(self, input):
         return input.view((-1,) + self.shape)
+
+
+class ICDF(nn.Module):
+
+    def __init__(self, in_features, distribution='Gaussian'):
+
+        super(ICDF, self).__init__()
+
+        if not distribution in ['Gaussian', 'Laplace']:
+            raise ValueError(f'ICDF does not support {distribution}')
+
+        self.means = Parameter(torch.Tensor(in_features))
+        self.sigmas = Parameter(torch.Tensor(in_features))
+        self.distribution = distribution
+
+    def reset_parameters(self):
+
+        self.means.zeros()
+        self.sigmas.ones()
+
+    def forward(self, x):
+
+        if self.distribution == 'Gaussian':
+            return gaussian_icdf(x, self.means, self.sigmas)
 
 
 class GatedDense(nn.Module):

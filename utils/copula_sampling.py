@@ -4,7 +4,7 @@ from scipy.stats import levy_stable
 from scipy import stats
 
 import torch
-from utils.distributions import gaussian_0_I_cdf
+from utils.inverse_distibutions import gaussian_0_I_cdf
 
 
 def partition(number, classes):

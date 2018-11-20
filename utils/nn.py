@@ -61,6 +61,7 @@ class ICDF(nn.Module):
         if self.distribution == 'laplace':
             return laplace_icdf(values=x, loc=self.loc, scale=torch.exp(self.scale))
         if self.distribution == 'log_norm':
+            x = torch.clamp(x, min=1e-7, max=1)
             return gaussian_icdf(values=torch.log(x), loc=self.loc, scale=torch.exp(self.scale))
 
 

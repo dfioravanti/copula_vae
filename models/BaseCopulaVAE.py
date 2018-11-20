@@ -41,7 +41,7 @@ class BaseCopulaVAE(BaseVAE):
     def p_x(self, s):
 
         z = self.p_z(s)
-        z = self.F_x_layers(z)
+        z = self.p_x_layers(z)
 
         if self.dataset_type == 'binary':
             return self.p_x_mean(z), None

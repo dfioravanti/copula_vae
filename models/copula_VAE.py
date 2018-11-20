@@ -33,26 +33,22 @@ class MarginalVAE(BaseCopulaVAE):
 
         self.L_layers = nn.Sequential(
             nn.Linear(np.prod(self.input_shape), 300),
-            nn.ReLU(),
-            nn.Linear(300, self.number_neurons_L)
+            nn.Tanh(),
+            nn.Linear(300, self.number_neurons_L),
+            nn.Sigmoid()
         )
 
         # Decoder p(x|s)
 
-        self.F = ICDF(self.dimension_latent_space, marginals=self.marginals)
-
         # F(z)
 
-        self.F_x_layers = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, 300),
-            nn.ReLU(),
-            nn.Linear(300, np.prod(self.input_shape)),
-            nn.Sigmoid()
-        )
+        self.F = ICDF(self.dimension_latent_space, marginals=self.marginals)
 
-        self.F_x_layers = nn.Sequential(
-            GatedDense(self.dimension_latent_space, 300),
-            GatedDense(300, 300)
+        self.p_x_layers = nn.Sequential(
+            nn.Linear(self.dimension_latent_space, 300),
+            nn.Tanh(),
+            nn.Linear(300, 300),
+            nn.Tanh(),
         )
 
         self.p_x_mean = nn.Sequential(
@@ -61,10 +57,8 @@ class MarginalVAE(BaseCopulaVAE):
         )
 
         if not dataset_type == 'binary':
-            self.p_x_log_var = nn.Sequential(
-                nn.Linear(300, np.prod(self.input_shape)),
-                nn.Hardtanh(min_val=-4.5, max_val=0)
-            )
+
+            self.p_x_log_var = nn.Linear(300, np.prod(self.input_shape))
 
         # weights initialization
         for m in self.modules():

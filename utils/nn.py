@@ -47,12 +47,16 @@ class ICDF(nn.Module):
         self.sigmas = torch.Tensor(in_features)
         self.distribution = distribution
 
+        self.reset_parameters()
+
     def reset_parameters(self):
 
-        self.means.zeros()
-        self.sigmas.ones()
+        self.means.data = torch.zeros(self.means.data.shape)
+        self.sigmas = torch.ones(self.sigmas.shape)
 
     def forward(self, x):
+
+        self.sigmas = self.sigmas.to(self.means.device)
 
         if self.distribution == 'Gaussian':
             return gaussian_icdf(x, self.means, self.sigmas)

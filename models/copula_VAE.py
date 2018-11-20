@@ -34,8 +34,9 @@ class MarginalVAE(BaseCopulaVAE):
         self.L_layers = nn.Sequential(
             nn.Linear(np.prod(self.input_shape), 300),
             nn.Tanh(),
-            nn.Linear(300, self.number_neurons_L),
-            nn.Sigmoid()
+            nn.Linear(300, 300),
+            nn.Tanh(),
+            nn.Linear(300, self.number_neurons_L)
         )
 
         # Decoder p(x|s)

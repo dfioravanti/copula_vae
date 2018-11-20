@@ -50,8 +50,8 @@ parser.add_argument('--s_size', type=int, default=50, metavar='M1',
 parser.add_argument('--architecture', type=str, default='copula',
                     help='architecture: standard, copula')
 
-parser.add_argument('--marginals', type=str, default='laplace',
-                    help='architecture: gaussian, laplace')
+parser.add_argument('--marginals', type=str, default='gaussian',
+                    help='architecture: gaussian, laplace, log_norm')
 
 # experiment
 parser.add_argument('--S', type=int, default=5000, metavar='SLL',

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from utils.plot_utils import plot_grid_images_file
-from utils.distributions import log_density_discretized_Logistic, log_normal_by_component
+
 
 def train_epoch(model,
                 epoch,
@@ -17,8 +17,8 @@ def train_epoch(model,
     model.train()
 
     batch_losses = np.zeros(len(loader))
-    batch_NLLs = np.zeros_like(batch_losses)
-    batch_KLs = np.zeros_like(batch_losses)
+    batch_RE = np.zeros_like(batch_losses)
+    batch_KL = np.zeros_like(batch_losses)
 
     if isinstance(model, nn.DataParallel):
         input_shape = model.module.input_shape
@@ -49,14 +49,14 @@ def train_epoch(model,
         optimizer.step()
 
         batch_losses[batch_idx] = loss
-        batch_NLLs[batch_idx] = NLL
-        batch_KLs[batch_idx] = KL
+        batch_RE[batch_idx] = NLL
+        batch_KL[batch_idx] = KL
 
     epoch_loss = np.average(batch_losses)
-    epoch_NLL = np.average(batch_NLLs)
-    epoch_KLs = np.average(batch_KLs)
+    epoch_RE = np.average(batch_RE)
+    epoch_KL = np.average(batch_KL)
 
-    return epoch_loss, epoch_NLL, epoch_KLs
+    return epoch_loss, epoch_RE, epoch_KL
 
 
 def validation_epoch(model,
@@ -66,8 +66,8 @@ def validation_epoch(model,
     model.eval()
 
     batch_losses = np.zeros(len(loader))
-    batch_NLLs = np.zeros_like(batch_losses)
-    batch_KLs = np.zeros_like(batch_losses)
+    batch_RE = np.zeros_like(batch_losses)
+    batch_KL = np.zeros_like(batch_losses)
 
     for batch_idx, (xs, _) in enumerate(loader):
         xs = xs.view(loader.batch_size, -1).to(device)
@@ -75,14 +75,14 @@ def validation_epoch(model,
         loss, NLL, KL = model.calculate_loss(xs, beta=beta)
 
         batch_losses[batch_idx] = loss
-        batch_NLLs[batch_idx] = NLL
-        batch_KLs[batch_idx] = KL
+        batch_RE[batch_idx] = NLL
+        batch_KL[batch_idx] = KL
 
     val_loss = np.average(batch_losses)
-    val_NLL = np.average(batch_NLLs)
-    val_KLs = np.average(batch_KLs)
+    val_RE = np.average(batch_RE)
+    val_KL = np.average(batch_KL)
 
-    return val_loss, val_NLL, val_KLs
+    return val_loss, val_RE, val_KL
 
 
 def compute_beta(epoch, warmup):
@@ -113,9 +113,6 @@ def plot_reconstruction(xs,
                           filename=filename)
 
 
-
-
-
 def train_on_dataset(model,
                      loader_train,
                      loader_validation,
@@ -130,10 +127,10 @@ def train_on_dataset(model,
     early_stopping_strikes = 0
 
     train_loss = np.zeros(epochs)
-    train_NLL = np.zeros_like(train_loss)
+    train_RE = np.zeros_like(train_loss)
     train_KL = np.zeros_like(train_loss)
     val_loss = np.zeros_like(train_loss)
-    val_NLL = np.zeros_like(train_loss)
+    val_RE = np.zeros_like(train_loss)
     val_KL = np.zeros_like(train_loss)
 
     path_output_file = output_dir / 'output.txt'
@@ -146,7 +143,7 @@ def train_on_dataset(model,
 
             f.write(f'Training with beta = {beta}\n')
 
-            train_loss[epoch], train_NLL[epoch], train_KL[epoch] = train_epoch(model=model,
+            train_loss[epoch], train_RE[epoch], train_KL[epoch] = train_epoch(model=model,
                                                                             loader=loader_train,
                                                                             optimizer=optimizer,
                                                                             epoch=epoch,
@@ -154,14 +151,14 @@ def train_on_dataset(model,
                                                                             device=device,
                                                                             output_dir=output_dir)
 
-            val_loss[epoch], val_NLL[epoch], val_KL[epoch] = validation_epoch(model=model,
+            val_loss[epoch], val_RE[epoch], val_KL[epoch] = validation_epoch(model=model,
                                                                            beta=beta,
                                                                            loader=loader_validation,
                                                                            device=device)
 
             f.write(f'epoch: {epoch}/{epochs}\n'
                     f'train loss: {train_loss[epoch]} and val loss: {val_loss[epoch]}\n'
-                    f'train NLL: {train_NLL[epoch]} and val NLL: {val_NLL[epoch]}\n'
+                    f'train RE: {train_RE[epoch]} and val RE: {val_RE[epoch]}\n'
                     f'train KL: {train_KL[epoch]} and val KL: {val_KL[epoch]}\n\n')
 
             if val_loss[epoch] < best_loss:
@@ -175,4 +172,4 @@ def train_on_dataset(model,
                 if early_stopping_strikes >= early_stopping_tolerance:
                     break
 
-    return model, (train_loss, train_NLL, train_KL), (val_loss, val_NLL, val_KL)
+    return model, (train_loss, train_RE, train_KL), (val_loss, val_RE, val_KL)

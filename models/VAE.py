@@ -3,7 +3,6 @@ from models.basic_model import BaseVAE
 import numpy as np
 import torch
 from torch import nn
-from utils.nn import GatedDense
 from utils.distributions import log_density_bernoulli, log_density_discretized_Logistic,\
                                 log_density_Normal, log_density_standard_Normal
 
@@ -34,7 +33,10 @@ class VAE(BaseVAE):
         )
 
         self.mean = nn.Linear(300, self.dimension_latent_space)
-        self.log_var = nn.Linear(300, self.dimension_latent_space)
+        self.log_var = nn.Sequential(
+            nn.Linear(300, self.dimension_latent_space),
+            nn.Hardtanh(min_val=-6., max_val=2.)
+        )
 
         # Decoder p(x|z)
 
@@ -45,7 +47,10 @@ class VAE(BaseVAE):
             nn.Tanh(),
         )
 
-        self.p_x_mean = nn.Linear(300, np.prod(self.input_shape))
+        self.p_x_mean = nn.Sequential(
+            nn.Linear(300, np.prod(self.input_shape)),
+            nn.Sigmoid()
+        )
 
         if not dataset_type == 'binary':
 
@@ -54,7 +59,7 @@ class VAE(BaseVAE):
         # weights initialization
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight)
+                nn.init.xavier_normal_(m.weight)
                 nn.init.constant_(m.bias, 0)
 
     # Model execution

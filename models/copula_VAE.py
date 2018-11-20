@@ -5,7 +5,6 @@ import torch
 from torch import nn
 
 from utils.nn import OneToOne, Flatten, Reshape, GatedDense, ICDF
-from utils.inverse_distibutions import gaussian_0_I_icdf
 from utils.utils_conv import compute_final_convolution_shape, build_convolutional_blocks,\
                              compute_final_deconv_shape, build_deconvolutional_blocks
 
@@ -17,6 +16,7 @@ class MarginalVAE(BaseCopulaVAE):
                  input_shape,
                  dataset_type,
                  encoder_output_size=300,
+                 marginals='gaussian',
                  device=torch.device("cpu")):
 
         super(MarginalVAE, self).__init__(dimension_latent_space=dimension_latent_space,
@@ -25,7 +25,7 @@ class MarginalVAE(BaseCopulaVAE):
                                           device=device)
 
         self.encoder_output_size = encoder_output_size
-
+        self.marginals = marginals
         self.number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
 
         # Encoder q(s | x)
@@ -39,7 +39,7 @@ class MarginalVAE(BaseCopulaVAE):
 
         # Decoder p(x|s)
 
-        self.F = ICDF(self.dimension_latent_space)
+        self.F = ICDF(self.dimension_latent_space, marginals=self.marginals)
 
         # F(z)
 

@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.nn import Parameter
 import torch.nn.functional as F
 
-from utils.inverse_distibutions import gaussian_icdf
+from utils.inverse_distibutions import gaussian_icdf, laplace_icdf
 
 
 class Flatten(nn.Module):
@@ -36,16 +36,16 @@ class Reshape(nn.Module):
 
 class ICDF(nn.Module):
 
-    def __init__(self, in_features, distribution='Gaussian'):
+    def __init__(self, in_features, marginals='gaussian'):
 
         super(ICDF, self).__init__()
 
-        if not distribution in ['Gaussian', 'Laplace']:
-            raise ValueError(f'ICDF does not support {distribution}')
+        if marginals not in ['gaussian', 'laplace']:
+            raise ValueError(f'ICDF does not support {marginals}')
 
         self.means = Parameter(torch.Tensor(in_features))
         self.log_sigmas = Parameter(torch.Tensor(in_features))
-        self.distribution = distribution
+        self.distribution = marginals
 
         self.reset_parameters()
 
@@ -56,8 +56,10 @@ class ICDF(nn.Module):
 
     def forward(self, x):
 
-        if self.distribution == 'Gaussian':
-            return gaussian_icdf(x, self.means, torch.exp(self.log_sigmas))
+        if self.distribution == 'gaussian':
+            return gaussian_icdf(values=x, loc=self.means, scale=torch.exp(self.log_sigmas))
+        if self.distribution == 'laplace':
+            return laplace_icdf(values=x, loc=self.means, scale=torch.exp(self.log_sigmas))
 
 
 class GatedDense(nn.Module):

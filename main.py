@@ -5,10 +5,9 @@ import json
 
 from loaders import load_funtions
 from utils.training import train_on_dataset
-from utils.parsing import choose_loss_function
 
 from models.VAE import VAE
-from models.copula_VAE import MarginalVAE, CopulaVAE, CopulaVAEWithNormalsConvDecoder
+from models.copula_VAE import MarginalVAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 
 import numpy as np
@@ -48,12 +47,13 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
 parser.add_argument('--s_size', type=int, default=50, metavar='M1',
                     help='latent space size (default: 50)')
 
-parser.add_argument('--architecture', type=str, default='gaussian_copula', metavar='P',
-                    help='architecture: standard, gaussian_copula')
+parser.add_argument('--architecture', type=str, default='copula',
+                    help='architecture: standard, copula')
+
+parser.add_argument('--marginals', type=str, default='laplace',
+                    help='architecture: gaussian, laplace')
 
 # experiment
-parser.add_argument('--loss', type=str, default='L2',
-                    help='loss function to be used: L1, L2, BCE')
 parser.add_argument('--S', type=int, default=5000, metavar='SLL',
                     help='number of samples used for approximating log-likelihood')
 
@@ -77,15 +77,16 @@ if args.dynamic_binarization:
     folder_name = f'{args.dataset_name}_bin'
 else:
     folder_name = f'{args.dataset_name}'
-folder_name = f'{folder_name}_{args.architecture}_{args.s_size}'
+if args.architecture == 'copula':
+    folder_name = f'{folder_name}_{args.marginals}_{args.architecture}_{args.s_size}'
+else:
+    folder_name = f'{folder_name}_{args.architecture}_{args.s_size}'
     
 args.output_dir = pathlib.Path(args.output_dir) / folder_name
 args.output_dir.mkdir(parents=True, exist_ok=True)
 
 with open(args.output_dir / 'config.json', 'w') as f:
     f.write(args_as_json)
-
-args.loss = choose_loss_function(args.loss)
 
 if args.warmup == 0:
     args.warmup = None
@@ -112,11 +113,12 @@ def main(args):
                     dataset_type=dataset_type,
                     device=args.device)
 
-    if args.architecture == 'gaussian_copula':
+    if args.architecture == 'copula':
         model = MarginalVAE(dimension_latent_space=args.s_size,
                             input_shape=input_shape,
                             encoder_output_size=300,
                             dataset_type=dataset_type,
+                            marginals=args.marginals,
                             device=args.device)
 
     if torch.cuda.device_count() > 1:

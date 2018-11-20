@@ -44,7 +44,7 @@ class ICDF(nn.Module):
             raise ValueError(f'ICDF does not support {distribution}')
 
         self.means = Parameter(torch.Tensor(in_features))
-        self.sigmas = torch.Tensor(in_features)
+        self.log_sigmas = Parameter(torch.Tensor(in_features))
         self.distribution = distribution
 
         self.reset_parameters()
@@ -52,14 +52,12 @@ class ICDF(nn.Module):
     def reset_parameters(self):
 
         self.means.data = torch.zeros(self.means.data.shape)
-        self.sigmas = torch.ones(self.sigmas.shape)
+        self.log_sigmas.data = torch.zeros(self.log_sigmas.data.shape)
 
     def forward(self, x):
 
-        self.sigmas = self.sigmas.to(self.means.device)
-
         if self.distribution == 'Gaussian':
-            return gaussian_icdf(x, self.means, self.sigmas)
+            return gaussian_icdf(x, self.means, torch.exp(self.log_sigmas))
 
 
 class GatedDense(nn.Module):

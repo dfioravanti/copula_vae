@@ -4,10 +4,11 @@ import numpy as np
 import torch
 from torch import nn
 
-from utils.nn import OneToOne, Flatten, Reshape, GatedDense, ICDF
+from utils.nn import Flatten, Reshape, ICDF, PositiveLinear
 from utils.utils_conv import compute_final_convolution_shape, build_convolutional_blocks,\
                              compute_final_deconv_shape, build_deconvolutional_blocks
 
+from utils.inverse_distibutions import gaussian_icdf
 
 class MarginalVAE(BaseCopulaVAE):
 
@@ -151,68 +152,68 @@ class CopulaVAEWithNormalsConvDecoder(BaseCopulaVAE):
         return super(CopulaVAEWithNormalsConvDecoder, self).compute_L_x(x, batch_size)
 
 
-class CopulaVAE(BaseCopulaVAE):
+class WrongMarginalVAE(BaseCopulaVAE):
 
     def __init__(self,
                  dimension_latent_space,
                  input_shape,
+                 dataset_type,
                  encoder_output_size=300,
                  device=torch.device("cpu")):
 
-        super(BaseCopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
-                                            input_shape=input_shape,
-                                            device=device)
+        super(WrongMarginalVAE, self).__init__(dimension_latent_space=dimension_latent_space,
+                                               input_shape=input_shape,
+                                               dataset_type=dataset_type,
+                                               device=device)
 
         self.encoder_output_size = encoder_output_size
-
         self.number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
 
         # Encoder q(s | x)
-        # L(x) without the final activtion function
+        # L(x) without the final activation function
 
         self.L_layers = nn.Sequential(
             nn.Linear(np.prod(self.input_shape), 300),
-            nn.ReLU(),
+            nn.Tanh(),
+            nn.Linear(300, 300),
+            nn.Tanh(),
             nn.Linear(300, self.number_neurons_L)
         )
 
         # Decoder p(x|s)
 
-        # F_l(s) for now we assume that everything is gaussian
-
-        self.z_s_layers = nn.Sequential(
-            OneToOne(self.dimension_latent_space),
-            nn.ReLU(),
-            OneToOne(self.dimension_latent_space),
-            nn.ReLU(),
-            OneToOne(self.dimension_latent_space),
-            nn.ReLU(),
-            OneToOne(self.dimension_latent_space),
-            nn.ReLU(),
-            OneToOne(self.dimension_latent_space)
-        )
-
         # F(z)
 
-        self.F_x_layers = nn.Sequential(
+        self.F_s = nn.Sequential(
             nn.Linear(self.dimension_latent_space, 300),
             nn.ReLU(),
             nn.Linear(300, 300),
             nn.ReLU(),
+            nn.Linear(300, self.dimension_latent_space)
+        )
+
+        self.p_x_layers = nn.Sequential(
+            nn.Linear(self.dimension_latent_space, 300),
+            nn.Tanh(),
+            nn.Linear(300, 300),
+            nn.Tanh(),
+        )
+
+        self.p_x_mean = nn.Sequential(
             nn.Linear(300, np.prod(self.input_shape)),
             nn.Sigmoid()
         )
 
+        if not dataset_type == 'binary':
+
+            self.p_x_log_var = nn.Linear(300, np.prod(self.input_shape))
+
         # weights initialization
         for m in self.modules():
-            if isinstance(m, nn.Linear):
+            if isinstance(m, nn.Linear) and not isinstance(m, PositiveLinear):
                 nn.init.xavier_normal_(m.weight)
                 nn.init.constant_(m.bias, 0)
 
-    def p_x(self, s):
+    def p_z(self, s):
 
-        # F_l(s)
-
-        z = self.z_s_layers(s)
-
-        return self.F_x_layers(z)
+        return self.F_s(s)

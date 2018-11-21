@@ -7,7 +7,7 @@ from loaders import load_funtions
 from utils.training import train_on_dataset
 
 from models.VAE import VAE
-from models.copula_VAE import MarginalVAE
+from models.copula_VAE import MarginalVAE, WrongMarginalVAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 
 import numpy as np
@@ -24,7 +24,7 @@ parser.add_argument('--batch_size', type=int, default=100, metavar='BStrain',
                     help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=2000, metavar='E',
                     help='number of epochs to train (default: 2000)')
-parser.add_argument('--lr', type=float, default=0.0003, metavar='LR',
+parser.add_argument('--lr', type=float, default=0.0005, metavar='LR',
                     help='learning rate (default: 0.0005)')
 parser.add_argument('--early_stopping_epochs', type=int, default=50, metavar='ES',
                     help='number of epochs for early stopping')
@@ -47,8 +47,8 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
 parser.add_argument('--s_size', type=int, default=50, metavar='M1',
                     help='latent space size (default: 50)')
 
-parser.add_argument('--architecture', type=str, default='copula',
-                    help='architecture: standard, copula')
+parser.add_argument('--architecture', type=str, default='wrong',
+                    help='architecture: standard, copula, wrong')
 
 parser.add_argument('--marginals', type=str, default='gaussian',
                     help='architecture: gaussian, laplace, log_norm')
@@ -113,13 +113,22 @@ def main(args):
                     dataset_type=dataset_type,
                     device=args.device)
 
-    if args.architecture == 'copula':
+    elif args.architecture == 'copula':
         model = MarginalVAE(dimension_latent_space=args.s_size,
                             input_shape=input_shape,
                             encoder_output_size=300,
                             dataset_type=dataset_type,
                             marginals=args.marginals,
                             device=args.device)
+
+    elif args.architecture == 'wrong':
+        model = WrongMarginalVAE(dimension_latent_space=args.s_size,
+                                 input_shape=input_shape,
+                                 encoder_output_size=300,
+                                 dataset_type=dataset_type,
+                                 device=args.device)
+    else:
+        raise ValueError(f'We do not support {args.architecture} as architecture')
 
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")

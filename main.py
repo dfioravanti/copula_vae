@@ -7,7 +7,7 @@ from loaders import load_funtions
 from utils.training import train_on_dataset
 
 from models.VAE import VAE
-from models.copula_VAE import MarginalVAE, WrongMarginalVAE
+from models.copula_VAE import MarginalVAE, CopulaVAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 
 import numpy as np
@@ -47,8 +47,8 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
 parser.add_argument('--s_size', type=int, default=50, metavar='M1',
                     help='latent space size (default: 50)')
 
-parser.add_argument('--architecture', type=str, default='wrong',
-                    help='architecture: standard, copula, wrong')
+parser.add_argument('--architecture', type=str, default='copula2',
+                    help='architecture: standard, copula, copula2')
 
 parser.add_argument('--marginals', type=str, default='gaussian',
                     help='architecture: gaussian, laplace, log_norm')
@@ -81,7 +81,7 @@ if args.architecture == 'copula':
     folder_name = f'{folder_name}_{args.marginals}_{args.architecture}_{args.s_size}'
 else:
     folder_name = f'{folder_name}_{args.architecture}_{args.s_size}'
-    
+
 args.output_dir = pathlib.Path(args.output_dir) / folder_name
 args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -101,7 +101,6 @@ if args.cuda:
 
 
 def main(args):
-
     train_loader, validation_loader, test_loader, \
     input_shape, dataset_type = load_dataset(dataset_name=args.dataset_name,
                                              batch_size=args.batch_size)
@@ -121,12 +120,12 @@ def main(args):
                             marginals=args.marginals,
                             device=args.device)
 
-    elif args.architecture == 'wrong':
-        model = WrongMarginalVAE(dimension_latent_space=args.s_size,
-                                 input_shape=input_shape,
-                                 encoder_output_size=300,
-                                 dataset_type=dataset_type,
-                                 device=args.device)
+    elif args.architecture == 'copula2':
+        model = CopulaVAE(dimension_latent_space=args.s_size,
+                          input_shape=input_shape,
+                          encoder_output_size=300,
+                          dataset_type=dataset_type,
+                          device=args.device)
     else:
         raise ValueError(f'We do not support {args.architecture} as architecture')
 
@@ -149,7 +148,7 @@ def main(args):
     results_test = model.calculate_likelihood(train_loader,
                                               number_samples=args.S,
                                               output_dir=args.output_dir
-    )
+                                              )
 
     save_results(model, results_train, results_val, results_test, args.output_dir)
 
@@ -157,7 +156,6 @@ def main(args):
 
 
 def load_dataset(dataset_name, batch_size=50):
-
     if dataset_name == 'binary_mnist':
 
         train_loader, test_loader, validation_loader = load_funtions.load_binary_MNIST(batch_size=batch_size)
@@ -198,7 +196,6 @@ def load_dataset(dataset_name, batch_size=50):
 
 
 def save_results(model, results_train, results_val, results_test, output_dir):
-
     epoch_train_loss, epoch_train_RE, epoch_train_KLs = results_train
     epoch_val_loss, epoch_val_RE, epoch_val_KLs = results_val
 

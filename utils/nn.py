@@ -143,11 +143,8 @@ class PositiveLinear(nn.Linear):
             >>> print(output.size())
         """
 
-    def __init__(self, in_features, out_features):
-
-        super(PositiveLinear, self).__init__(in_features, out_features, bias=False)
-
     def forward(self, input):
 
-        transformed_weight = torch.log(torch.exp(self.weight) + 1)
+        transformed_weight = torch.clamp(self.weight, min=0)
+        transformed_bias = torch.clamp(self.bias, min=0)
         return F.linear(input, transformed_weight, self.bias)

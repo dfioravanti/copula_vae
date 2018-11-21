@@ -152,7 +152,7 @@ class CopulaVAEWithNormalsConvDecoder(BaseCopulaVAE):
         return super(CopulaVAEWithNormalsConvDecoder, self).compute_L_x(x, batch_size)
 
 
-class WrongMarginalVAE(BaseCopulaVAE):
+class CopulaVAE(BaseCopulaVAE):
 
     def __init__(self,
                  dimension_latent_space,
@@ -161,10 +161,10 @@ class WrongMarginalVAE(BaseCopulaVAE):
                  encoder_output_size=300,
                  device=torch.device("cpu")):
 
-        super(WrongMarginalVAE, self).__init__(dimension_latent_space=dimension_latent_space,
-                                               input_shape=input_shape,
-                                               dataset_type=dataset_type,
-                                               device=device)
+        super(CopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
+                                        input_shape=input_shape,
+                                        dataset_type=dataset_type,
+                                            device=device)
 
         self.encoder_output_size = encoder_output_size
         self.number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
@@ -185,11 +185,11 @@ class WrongMarginalVAE(BaseCopulaVAE):
         # F(z)
 
         self.F_s = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, 300),
+            PositiveLinear(self.dimension_latent_space, 300),
             nn.ReLU(),
-            nn.Linear(300, 300),
+            PositiveLinear(300, 300),
             nn.ReLU(),
-            nn.Linear(300, self.dimension_latent_space)
+            PositiveLinear(300, self.dimension_latent_space)
         )
 
         self.p_x_layers = nn.Sequential(
@@ -210,7 +210,7 @@ class WrongMarginalVAE(BaseCopulaVAE):
 
         # weights initialization
         for m in self.modules():
-            if isinstance(m, nn.Linear) and not isinstance(m, PositiveLinear):
+            if isinstance(m, nn.Linear):
                 nn.init.xavier_normal_(m.weight)
                 nn.init.constant_(m.bias, 0)
 

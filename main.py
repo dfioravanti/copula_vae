@@ -9,6 +9,7 @@ from utils.training import train_on_dataset
 from models.VAE import VAE
 from models.copula_VAE import MarginalVAE, CopulaVAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
+from loaders.dSprites import dSpritesDataset
 
 import numpy as np
 
@@ -60,10 +61,13 @@ parser.add_argument('--S', type=int, default=5000, metavar='SLL',
 # dataset
 parser.add_argument('--dataset_name', type=str, default='mnist', metavar='DN',
                     help='name of the dataset: binary_mnist, mnist, bedrooms,'
-                         ' omniglot, cifar10, fashionmnist')
+                         ' omniglot, cifar10, fashionmnist, dSprites')
 
 parser.add_argument('--dynamic_binarization', action='store_true', default=True,
                     help='allow dynamic binarization')
+
+parser.add_argument('--shuffle', action='store_true', default=False,
+                    help='shuffle the dataset (default: False)')
 
 parser.add_argument('--output_dir', type=str, default='./outputs',
                     help='Location of the output directory')
@@ -161,36 +165,53 @@ def main(args):
 def load_dataset(dataset_name, batch_size=50):
     if dataset_name == 'binary_mnist':
 
-        train_loader, test_loader, validation_loader = load_funtions.load_binary_MNIST(batch_size=batch_size)
+        train_loader, test_loader, validation_loader = \
+            load_funtions.load_binary_MNIST(batch_size=batch_size)
+
         input_shape = BinaryMNISTDataset.shape
 
     elif dataset_name == 'mnist':
 
         train_loader, test_loader, validation_loader, dataset_type = \
             load_funtions.load_MNIST(batch_size=batch_size,
-                                     dynamic_binarization=args.dynamic_binarization, shuffle=False)
+                                     dynamic_binarization=args.dynamic_binarization,
+                                     shuffle=args.shuffle)
         input_shape = (1, 28, 28)
 
     elif dataset_name == 'fashionmnist':
 
-        train_loader, test_loader, validation_loader = load_funtions.load_FashionMNIST(batch_size=batch_size,
-                                                                                       shuffle=False)
+        train_loader, test_loader, validation_loader = \
+            load_funtions.load_FashionMNIST(batch_size=batch_size,
+                                            shuffle=args.shuffle)
         input_shape = (1, 28, 28)
 
     elif dataset_name == 'omniglot':
 
-        train_loader, test_loader, validation_loader = load_funtions.load_omniglot(batch_size=batch_size, shuffle=False)
+        train_loader, test_loader, validation_loader = \
+            load_funtions.load_omniglot(batch_size=batch_size,
+                                        shuffle=args.shuffle)
         input_shape = (1, 105, 105)
 
     elif dataset_name == 'cifar10':
 
-        train_loader, test_loader, validation_loader = load_funtions.load_cifar10(batch_size=batch_size, shuffle=False)
+        train_loader, test_loader, validation_loader = \
+            load_funtions.load_cifar10(batch_size=batch_size,
+                                       shuffle=args.shuffle)
         input_shape = (3, 32, 32)
 
     elif dataset_name == 'bedrooms':
 
-        train_loader, test_loader, validation_loader = load_funtions.load_bedrooms(batch_size=batch_size, shuffle=False)
+        train_loader, test_loader, validation_loader = \
+            load_funtions.load_bedrooms(batch_size=batch_size,
+                                        shuffle=args.shuffle)
         input_shape = (3, 28, 28)
+
+    elif dataset_name == 'dSprites':
+
+        train_loader, test_loader, validation_loader, dataset_type = \
+            load_funtions.load_dSprites(batch_size=batch_size,
+                                        shuffle=args.shuffle)
+        input_shape = dSpritesDataset.shape
 
     else:
         raise ValueError('Wrond dataset name')

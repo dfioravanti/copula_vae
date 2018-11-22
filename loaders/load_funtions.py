@@ -1,4 +1,3 @@
-
 import sys
 import pathlib
 
@@ -10,12 +9,71 @@ import torch.utils.data as data_utils
 from torchvision import transforms, datasets
 
 from loaders import BinaryMNISTDataset
+from loaders.dSprites import dSpritesDataset
 
-from utils.utils_load_dataset import ToBinary, SubsetSampler
+from utils.utils_load_dataset import SubsetSampler
+
+
+def load_dSprites(root_dir=None, batch_size=20,
+                  shuffle=True, download=True, verbose=False):
+    """
+    This function load the MNIST dataset
+
+    :param root_dir: root directory where to store the dataset
+    :param dynamic_binarization: If the dataset should dinamicaly binarized as in [ref]
+    :param batch_size: see datasets.MNIST
+    :param transform: see datasets.MNIST
+    :param shuffle: Should the dataset be shuffled
+    :param download: see datasets.MNIST
+    :return:
+    """
+
+    if root_dir is None:
+        root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets/dsprites'
+
+    dataset = dSpritesDataset(root_dir,
+                              download=download,
+                              verbose=verbose)
+
+    dataset_type = "binary"
+    data = torch.from_numpy(dataset.data)
+    labels = data
+
+    dataset = data_utils.TensorDataset(data.float(), labels)
+
+    size_dataset = len(dataset)
+    size_train = len(dataset) / 0.8
+
+    indices = list(range(size_dataset))
+
+    split_test = int(np.floor(0.2 * size_dataset))
+    idx_train, idx_test = indices[split_test:], indices[:split_test]
+    split_val = int(np.floor(0.2 * size_train))
+    idx_train, idx_val = idx_train[split_val:], idx_train[:split_val]
+
+    if shuffle:
+        np.random.shuffle(indices)
+
+    sampler_train = SubsetSampler(idx_train)
+    sampler_val = SubsetSampler(idx_val)
+    sampler_test = SubsetSampler(idx_test)
+
+    loader_train = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, sampler=sampler_train, shuffle=False,
+    )
+
+    loader_val = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, sampler=sampler_val, shuffle=False
+    )
+
+    loader_test = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, sampler=sampler_test, shuffle=False
+    )
+
+    return loader_train, loader_test, loader_val, dataset_type
 
 
 def load_binary_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
-
     train_dataset = BinaryMNISTDataset.BinaryMNISTDataset(root_dir,
                                                           download=download,
                                                           train=True,
@@ -49,7 +107,6 @@ def load_binary_MNIST(root_dir=None, batch_size=20, shuffle=True, transform=None
 
 def load_MNIST(root_dir=None, dynamic_binarization=True,
                batch_size=20, transform=None, shuffle=True, download=True):
-
     """
     This function load the MNIST dataset
 
@@ -69,10 +126,10 @@ def load_MNIST(root_dir=None, dynamic_binarization=True,
         transform = transforms.ToTensor()
 
     train_dataset = datasets.MNIST(root_dir, train=True, download=download,
-                                          transform=transform)
+                                   transform=transform)
 
     test_dataset = datasets.MNIST(root_dir, train=False, download=download,
-                                          transform=transform)
+                                  transform=transform)
 
     if dynamic_binarization:
         dataset_type = "binary"
@@ -116,7 +173,6 @@ def load_MNIST(root_dir=None, dynamic_binarization=True,
 
 
 def load_FashionMNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
-
     if root_dir is None:
         root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets/Fashion'
 
@@ -159,7 +215,6 @@ def load_FashionMNIST(root_dir=None, batch_size=20, shuffle=True, transform=None
 
 
 def load_bedrooms(root_dir=None, batch_size=20, shuffle=True, transform=None):
-
     if root_dir is None:
         root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
         root_dir = str(root_dir)
@@ -199,7 +254,6 @@ def load_bedrooms(root_dir=None, batch_size=20, shuffle=True, transform=None):
 
 
 def load_omniglot(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
-
     if root_dir is None:
         root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
         root_dir = str(root_dir)
@@ -243,7 +297,6 @@ def load_omniglot(root_dir=None, batch_size=20, shuffle=True, transform=None, do
 
 
 def load_cifar10(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
-
     if root_dir is None:
         root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
         root_dir = str(root_dir)
@@ -287,14 +340,12 @@ def load_cifar10(root_dir=None, batch_size=20, shuffle=True, transform=None, dow
 
 
 if __name__ == '__main__':
-
     import matplotlib.pyplot as plt
 
-    train_loader, _, _, _ = load_MNIST('../datasets/', dynamic_binarization=True, batch_size=1, download=False, shuffle=False)
-
+    train_loader, test_loader, valid_loader, dataset_type = load_dSprites(root_dir='../datasets/', verbose=True,
+                                                                          batch_size=1)
     sample = next(iter(train_loader))[0]
     print(sample.shape)
-    sample = sample.reshape((28, 28))
+    sample = sample.reshape((64, 64))
     plt.imshow(sample, cmap='gray')
     plt.show()
-

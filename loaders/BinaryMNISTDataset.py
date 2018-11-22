@@ -46,6 +46,8 @@ class BinaryMNISTDataset(data_utils.Dataset):
             transform (callable): Optional transform to be applied on a sample.
         """
 
+        super(BinaryMNISTDataset, self).__init__()
+
         if not ((train == True and test == validation == False) or
                 (test == True and train == validation == False) or
                 (validation == True and train == test == False)):
@@ -117,7 +119,6 @@ class BinaryMNISTDataset(data_utils.Dataset):
 
 
 if __name__ == '__main__':
-
     dataset = BinaryMNISTDataset('../datasets/', True, train=True)
 
     print(len(dataset))

@@ -45,14 +45,14 @@ def load_dSprites(root_dir=None, batch_size=20,
     size_train = len(dataset) / 0.8
 
     indices = list(range(size_dataset))
+    if shuffle:
+        np.random.shuffle(indices)
 
     split_test = int(np.floor(0.2 * size_dataset))
     idx_train, idx_test = indices[split_test:], indices[:split_test]
     split_val = int(np.floor(0.2 * size_train))
     idx_train, idx_val = idx_train[split_val:], idx_train[:split_val]
 
-    if shuffle:
-        np.random.shuffle(indices)
 
     sampler_train = SubsetSampler(idx_train)
     sampler_val = SubsetSampler(idx_val)

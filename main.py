@@ -47,11 +47,11 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
 parser.add_argument('--s_size', type=int, default=50, metavar='M1',
                     help='latent space size (default: 50)')
 
-parser.add_argument('--architecture', type=str, default='copula2',
+parser.add_argument('--architecture', type=str, default='copula',
                     help='architecture: standard, copula, copula2')
 
 parser.add_argument('--marginals', type=str, default='gaussian',
-                    help='architecture: gaussian, laplace, log_norm')
+                    help='architecture: gaussian, laplace, log_norm, cauchy, exp')
 
 # experiment
 parser.add_argument('--S', type=int, default=5000, metavar='SLL',

@@ -185,11 +185,11 @@ class CopulaVAE(BaseCopulaVAE):
         # F(z)
 
         self.F_s = nn.Sequential(
-            PositiveLinear(self.dimension_latent_space, 300),
+            nn.Linear(self.dimension_latent_space, 300),
             nn.ReLU(),
-            PositiveLinear(300, 300),
+            nn.Linear(300, 300),
             nn.ReLU(),
-            PositiveLinear(300, self.dimension_latent_space)
+            nn.Linear(300, self.dimension_latent_space)
         )
 
         self.p_x_layers = nn.Sequential(

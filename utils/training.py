@@ -146,20 +146,15 @@ def train_on_dataset(model,
         # logging
 
         if writer is not None:
-            writer.add_scalars('loss',
-                               {'train': loss_train,
-                                'val': loss_val},
-                               epoch)
+            writer.add_scalar(tag='loss/train', scalar_value=loss_train, global_step=epoch)
+            writer.add_scalar(tag='loss/val', scalar_value=loss_val, global_step=epoch)
 
-            writer.add_scalars('RE',
-                               {'train': RE_train,
-                                'val': RE_val},
-                               epoch)
+            writer.add_scalar(tag='RE/train', scalar_value=RE_train, global_step=epoch)
+            writer.add_scalar(tag='RE/val', scalar_value=RE_val, global_step=epoch)
 
-            writer.add_scalars('KL',
-                               {'train': KL_train,
-                                'val': KL_val},
-                               epoch)
+            writer.add_scalar(tag='KL/train', scalar_value=KL_train, global_step=epoch)
+            writer.add_scalar(tag='KL/val', scalar_value=KL_val, global_step=epoch)
+
 
         # Early stopping
 

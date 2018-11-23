@@ -1,14 +1,14 @@
 import argparse
+import hashlib
 import json
 import pathlib
-from datetime import datetime
 
 import torch
 import torch.nn as nn
 
-from models.VAE import VAE
 from models.LayerBauer import CopulaVAE, MarginalVAE
 from models.LayerBetaVAE import ConvMarginalVAE
+from models.VAE import VAE
 
 
 def get_args():
@@ -82,12 +82,13 @@ def get_args():
     else:
         folder_name = f'{args.dataset_name}'
     if args.architecture == 'copula':
-        folder_name = f'{folder_name}_{args.marginals}_{args.architecture}_{args.s_size}'
+        folder_name = f'{folder_name}_{args.marginals}_{args.architecture}'
     else:
-        folder_name = f'{folder_name}_{args.architecture}_{args.s_size}'
+        folder_name = f'{folder_name}_{args.architecture}'
 
-    current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    args.output_dir = pathlib.Path(args.output_dir) / folder_name / current_time
+    folder_name = f'{folder_name}_{args.s_size}'
+
+    args.output_dir = pathlib.Path(args.output_dir) / folder_name
     args.log_dir = args.output_dir / 'logs'
     args.output_dir.mkdir(parents=True, exist_ok=True)
 

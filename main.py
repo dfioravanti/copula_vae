@@ -7,7 +7,8 @@ from loaders import load_funtions
 from utils.training import train_on_dataset
 
 from models.VAE import VAE
-from models.copula_VAE import MarginalVAE, CopulaVAE, ConvMarginalVAE
+from models.LayerBauer import CopulaVAE
+from models.LayerBetaVAE import MarginalVAE, ConvMarginalVAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 from loaders.dSprites import dSpritesDataset
 

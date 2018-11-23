@@ -1,4 +1,4 @@
-from models.basic_model import BaseVAE
+from models.BaseVAE import BaseVAE
 
 import numpy as np
 import torch

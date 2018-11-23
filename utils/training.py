@@ -30,13 +30,12 @@ def train_epoch(model,
         optimizer.zero_grad()
 
         # TODO: move reshape inside the model.
-        # So if for some reason I decide to start with CNN it still works.
-        # Inputs and outputs should always be  of the original shape
+        #       So if for some reason I decide to start with CNN it still works.
+        #       Inputs and outputs should always be  of the original shape
 
         xs = xs.view(loader.batch_size, -1).to(device)
 
         if batch_idx == 0 and output_dir is not None:
-
             xs_reconstructed = model.get_reconstruction(xs)
             plot_reconstruction(xs[:10],
                                 xs_reconstructed[:10],
@@ -99,7 +98,6 @@ def plot_reconstruction(xs,
                         input_shape,
                         epoch,
                         output_dir):
-
     xs = xs.view((-1,) + input_shape)
     xs_reconstructed = xs_reconstructed.view((-1,) + input_shape)
 
@@ -122,7 +120,6 @@ def train_on_dataset(model,
                      early_stopping_tolerance=10,
                      device=torch.device("cpu"),
                      output_dir=None):
-
     best_loss = math.inf
     early_stopping_strikes = 0
 
@@ -144,17 +141,17 @@ def train_on_dataset(model,
             f.write(f'Training with beta = {beta}\n')
 
             train_loss[epoch], train_RE[epoch], train_KL[epoch] = train_epoch(model=model,
-                                                                            loader=loader_train,
-                                                                            optimizer=optimizer,
-                                                                            epoch=epoch,
-                                                                            beta=beta,
-                                                                            device=device,
-                                                                            output_dir=output_dir)
+                                                                              loader=loader_train,
+                                                                              optimizer=optimizer,
+                                                                              epoch=epoch,
+                                                                              beta=beta,
+                                                                              device=device,
+                                                                              output_dir=output_dir)
 
             val_loss[epoch], val_RE[epoch], val_KL[epoch] = validation_epoch(model=model,
-                                                                           beta=beta,
-                                                                           loader=loader_validation,
-                                                                           device=device)
+                                                                             beta=beta,
+                                                                             loader=loader_validation,
+                                                                             device=device)
 
             f.write(f'epoch: {epoch}/{epochs}\n'
                     f'train loss: {train_loss[epoch]} and val loss: {val_loss[epoch]}\n'

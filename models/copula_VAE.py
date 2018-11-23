@@ -34,11 +34,11 @@ class MarginalVAE(BaseCopulaVAE):
         # L(x) without the final activation function
 
         self.L_layers = nn.Sequential(
-            nn.Linear(np.prod(self.input_shape), 300),
-            nn.Tanh(),
-            nn.Linear(300, 300),
-            nn.Tanh(),
-            nn.Linear(300, self.number_neurons_L)
+            nn.Linear(np.prod(self.input_shape), 1200),
+            nn.ReLU(),
+            nn.Linear(1200, 1200),
+            nn.ReLU(),
+            nn.Linear(1200, self.number_neurons_L)
         )
 
         # Decoder p(x|s)
@@ -48,19 +48,21 @@ class MarginalVAE(BaseCopulaVAE):
         self.F = ICDF(self.dimension_latent_space, marginals=self.marginals)
 
         self.p_x_layers = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, 300),
+            nn.Linear(self.dimension_latent_space, 1200),
             nn.Tanh(),
-            nn.Linear(300, 300),
+            nn.Linear(1200, 1200),
+            nn.Tanh(),
+            nn.Linear(1200, 1200),
             nn.Tanh(),
         )
 
         self.p_x_mean = nn.Sequential(
-            nn.Linear(300, np.prod(self.input_shape)),
+            nn.Linear(1200, np.prod(self.input_shape)),
             nn.Sigmoid()
         )
 
         if not dataset_type == 'binary':
-            self.p_x_log_var = nn.Linear(300, np.prod(self.input_shape))
+            self.p_x_log_var = nn.Linear(1200, np.prod(self.input_shape))
 
         # weights initialization
         for m in self.modules():
@@ -131,8 +133,11 @@ class ConvMarginalVAE(BaseCopulaVAE):
             nn.ReLU(True),
             nn.ConvTranspose2d(32, 32, 4, 2, 1),  # B,  32, 32, 32
             nn.ReLU(True),
-            nn.ConvTranspose2d(32, nb_channel_in, 4, 2, 1),  # B, nc, 64, 64
+            nn.ConvTranspose2d(32, nb_channel_in, 4, 2, 1),  # B, nc, 64, 64,
+            nn.Sigmoid()
         )
+
+        # TODO: Fix the variance stuff
 
     def compute_L_x(self, x, batch_size):
 

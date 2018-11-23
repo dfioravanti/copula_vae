@@ -38,7 +38,6 @@ def train_epoch(model,
         xs = xs.view(loader.batch_size, -1).to(device)
 
         if batch_idx == 0 and writer is not None:
-
             recs = model.get_reconstruction(xs)
 
             shape = (-1,) + input_shape
@@ -150,13 +149,20 @@ def train_on_dataset(model,
         # logging
 
         if writer is not None:
-            writer.add_scalar('loss/train', loss_train, epoch)
-            writer.add_scalar('RE/train', RE_train, epoch)
-            writer.add_scalar('KL/train', KL_train, epoch)
+            writer.add_scalars('loss',
+                               {'train': loss_train,
+                                'val': loss_val},
+                               epoch)
 
-            writer.add_scalar('loss/val', loss_val, epoch)
-            writer.add_scalar('RE/val', RE_val, epoch)
-            writer.add_scalar('KL/val', KL_val, epoch)
+            writer.add_scalars('RE',
+                               {'train': RE_train,
+                                'val': RE_val},
+                               epoch)
+
+            writer.add_scalars('KL',
+                               {'train': KL_train,
+                                'val': KL_val},
+                               epoch)
 
         # Early stopping
 
@@ -171,4 +177,4 @@ def train_on_dataset(model,
             if early_stopping_strikes >= early_stopping_tolerance:
                 break
 
-    return model
+    return model, writer

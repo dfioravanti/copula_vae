@@ -19,14 +19,14 @@ class Flatten(nn.Module):
         return input.view(input.size(0), -1)
 
 
-class Reshape(nn.Module):
+class View(nn.Module):
 
     """
     Layer that reshapes a given input to a desired shape
     """
 
     def __init__(self, shape):
-        super(Reshape, self).__init__()
+        super(View, self).__init__()
 
         self.shape = shape
 

@@ -4,11 +4,12 @@ import numpy as np
 import torch
 from torch import nn
 
-from utils.nn import Flatten, Reshape, ICDF, PositiveLinear
-from utils.utils_conv import compute_final_convolution_shape, build_convolutional_blocks,\
-                             compute_final_deconv_shape, build_deconvolutional_blocks
+from utils.nn import Flatten, View, ICDF, PositiveLinear
+from utils.utils_conv import compute_final_convolution_shape, build_convolutional_blocks, \
+    compute_final_deconv_shape, build_deconvolutional_blocks
 
 from utils.inverse_distibutions import gaussian_icdf
+
 
 class MarginalVAE(BaseCopulaVAE):
 
@@ -27,7 +28,7 @@ class MarginalVAE(BaseCopulaVAE):
 
         self.encoder_output_size = encoder_output_size
         self.marginals = marginals
-        self.number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
+        self.number_neurons_L = dimension_latent_space * (dimension_latent_space + 1) // 2
 
         # Encoder q(s | x)
         # L(x) without the final activation function
@@ -59,7 +60,6 @@ class MarginalVAE(BaseCopulaVAE):
         )
 
         if not dataset_type == 'binary':
-
             self.p_x_log_var = nn.Linear(300, np.prod(self.input_shape))
 
         # weights initialization
@@ -73,83 +73,82 @@ class MarginalVAE(BaseCopulaVAE):
         return self.F(s)
 
 
-class CopulaVAEWithNormalsConvDecoder(BaseCopulaVAE):
+class ConvMarginalVAE(BaseCopulaVAE):
 
     def __init__(self,
                  dimension_latent_space,
                  input_shape,
-                 encoder_output_size=300,
+                 dataset_type,
+                 marginals='gaussian',
                  device=torch.device("cpu")):
 
-        super(CopulaVAEWithNormalsConvDecoder, self).__init__(dimension_latent_space=dimension_latent_space,
-                                                              input_shape=input_shape,
-                                                              device=device)
+        super(ConvMarginalVAE, self).__init__(dimension_latent_space=dimension_latent_space,
+                                              input_shape=input_shape,
+                                              dataset_type=dataset_type,
+                                              device=device)
 
         # Variables
 
+        self.marginals = marginals
+        self.number_neurons_L = dimension_latent_space * (dimension_latent_space + 1) // 2
         nb_channel_in = self.input_shape[0]
-        self.encoder_output_size = encoder_output_size
-        self.number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
-
-        kernel_size = 4
-        number_blocks = 2
-        nb_channel = 32
-        maxpolling = True
-        conv_output_shape = compute_final_convolution_shape(self.input_shape[1], self.input_shape[2],
-                                                            number_blocks, maxpolling, kernel_size)
 
         # Encoder q(s | x)
         # L(x) without the final activation function
 
-        self.L_layers = build_convolutional_blocks(number_blocks, nb_channel_in, nb_channel, maxpolling, kernel_size)
-        self.L_layers.add_module('flatten_0', Flatten())
-        self.L_layers.add_module('linear_0',
-                                 nn.Linear(nb_channel * conv_output_shape[0] * conv_output_shape[1],
-                                           self.number_neurons_L))
-
+        self.L_layers = nn.Sequential(
+            nn.Conv2d(nb_channel_in, 32, 4, 2, 1),  # B,  32, 32, 32
+            nn.ReLU(True),
+            nn.Conv2d(32, 32, 4, 2, 1),  # B,  32, 16, 16
+            nn.ReLU(True),
+            nn.Conv2d(32, 64, 4, 2, 1),  # B,  64,  8,  8
+            nn.ReLU(True),
+            nn.Conv2d(64, 64, 4, 2, 1),  # B,  64,  4,  4
+            nn.ReLU(True),
+            nn.Conv2d(64, 256, 4, 1),  # B, 256,  1,  1
+            nn.ReLU(True),
+            View((256 * 1 * 1, )),  # B, 256
+            nn.Linear(256, self.number_neurons_L),  # B, z_dim
+        )
 
         # Decoder p(x|s)
 
         # F_l(s) for now we assume that everything is gaussian
 
-        self.mean_z = nn.Linear(self.dimension_latent_space, self.dimension_latent_space)
-        self.var_z = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, self.dimension_latent_space),
-            nn.Softplus()
-        )
+        self.F = ICDF(self.dimension_latent_space, marginals=self.marginals)
 
         # F(z)
 
-        decoder_in_shape = (1, 7, 7)
-        number_blocks_deconv = 2
-        deconv_output_shape = compute_final_deconv_shape(decoder_in_shape[1], decoder_in_shape[2],
-                                                         number_blocks=number_blocks_deconv, kernel_size=kernel_size)
-        dim_decov_out = np.prod(deconv_output_shape)
-
-        self.F_x_layers = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, np.prod(decoder_in_shape)),
-            nn.ReLU(),
+        self.p_x_mean = nn.Sequential(
+            nn.Linear(dimension_latent_space, 256),  # B, 256
+            View((256, 1, 1)),  # B, 256,  1,  1
+            nn.ReLU(True),
+            nn.ConvTranspose2d(256, 64, 4),  # B,  64,  4,  4
+            nn.ReLU(True),
+            nn.ConvTranspose2d(64, 64, 4, 2, 1),  # B,  64,  8,  8
+            nn.ReLU(True),
+            nn.ConvTranspose2d(64, 32, 4, 2, 1),  # B,  32, 16, 16
+            nn.ReLU(True),
+            nn.ConvTranspose2d(32, 32, 4, 2, 1),  # B,  32, 32, 32
+            nn.ReLU(True),
+            nn.ConvTranspose2d(32, nb_channel_in, 4, 2, 1),  # B, nc, 64, 64
         )
-        self.F_x_layers.add_module('reshape', Reshape(decoder_in_shape))
-        self.F_x_layers.add_module('deconv', build_deconvolutional_blocks(number_blocks_deconv,
-                                                                          nb_channels_in=decoder_in_shape[0],
-                                                                          nb_channels=nb_channel,
-                                                                          kernel_size=kernel_size))
-
-        self.F_x_layers.add_module('flatten_out', Flatten())
-        self.F_x_layers.add_module('dense_out', nn.Linear(nb_channel * dim_decov_out, np.prod(self.input_shape)))
-        self.F_x_layers.add_module('sigmoid_out', nn.Sigmoid())
-
-        # weights initialization
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_normal_(m.weight)
-                nn.init.constant_(m.bias, 0)
 
     def compute_L_x(self, x, batch_size):
 
-        x = x.view((-1, ) + self.input_shape)
-        return super(CopulaVAEWithNormalsConvDecoder, self).compute_L_x(x, batch_size)
+        x = x.view((-1,) + self.input_shape)
+        return super(ConvMarginalVAE, self).compute_L_x(x, batch_size)
+
+    def p_z(self, s):
+
+        return self.F(s)
+
+    def p_x(self, s):
+
+        z = self.p_z(s)
+        x = self.p_x_mean(z)
+
+        return x.view((-1, np.prod(self.input_shape))), None
 
 
 class CopulaVAE(BaseCopulaVAE):
@@ -164,10 +163,10 @@ class CopulaVAE(BaseCopulaVAE):
         super(CopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
                                         input_shape=input_shape,
                                         dataset_type=dataset_type,
-                                            device=device)
+                                        device=device)
 
         self.encoder_output_size = encoder_output_size
-        self.number_neurons_L = dimension_latent_space * (dimension_latent_space+1) // 2
+        self.number_neurons_L = dimension_latent_space * (dimension_latent_space + 1) // 2
 
         # Encoder q(s | x)
         # L(x) without the final activation function
@@ -205,7 +204,6 @@ class CopulaVAE(BaseCopulaVAE):
         )
 
         if not dataset_type == 'binary':
-
             self.p_x_log_var = nn.Linear(300, np.prod(self.input_shape))
 
         # weights initialization

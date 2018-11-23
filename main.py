@@ -7,7 +7,7 @@ from loaders import load_funtions
 from utils.training import train_on_dataset
 
 from models.VAE import VAE
-from models.copula_VAE import MarginalVAE, CopulaVAE
+from models.copula_VAE import MarginalVAE, CopulaVAE, ConvMarginalVAE
 from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 from loaders.dSprites import dSpritesDataset
 
@@ -48,8 +48,8 @@ parser.add_argument('--seed', type=int, default=42, metavar='S',
 parser.add_argument('--s_size', type=int, default=50, metavar='M1',
                     help='latent space size (default: 50)')
 
-parser.add_argument('--architecture', type=str, default='copula',
-                    help='architecture: standard, copula, copula2')
+parser.add_argument('--architecture', type=str, default='standard',
+                    help='architecture: standard, conv, copula, copula2')
 
 parser.add_argument('--marginals', type=str, default='gaussian',
                     help='architecture: gaussian, laplace, log_norm, cauchy, exp')
@@ -115,6 +115,12 @@ def main(args):
                     encoder_output_size=300,
                     dataset_type=dataset_type,
                     device=args.device)
+
+    elif args.architecture == 'conv':
+        model = ConvMarginalVAE(dimension_latent_space=args.s_size,
+                                input_shape=input_shape,
+                                dataset_type=dataset_type,
+                                device=args.device)
 
     elif args.architecture == 'copula':
         model = MarginalVAE(dimension_latent_space=args.s_size,

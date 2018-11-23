@@ -9,9 +9,60 @@ import torch.utils.data as data_utils
 from torchvision import transforms, datasets
 
 from loaders import BinaryMNISTDataset
+from loaders.BinaryMNISTDataset import BinaryMNISTDataset
 from loaders.dSprites import dSpritesDataset
 
 from utils.utils_load_dataset import SubsetSampler
+
+
+def load_dataset(args):
+    if args.dataset_name == 'binary_mnist':
+
+        train_loader, test_loader, validation_loader, dataset_type = load_binary_MNIST(batch_size=args.batch_size)
+
+        input_shape = BinaryMNISTDataset.shape
+
+    elif args.dataset_name == 'mnist':
+
+        train_loader, test_loader, validation_loader, dataset_type = load_MNIST(batch_size=args.batch_size,
+                                                                                dynamic_binarization=args.dynamic_binarization,
+                                                                                shuffle=args.shuffle)
+        input_shape = (1, 28, 28)
+
+    elif args.dataset_name == 'fashionmnist':
+
+        train_loader, test_loader, validation_loader = load_FashionMNIST(batch_size=args.batch_size,
+                                                                         shuffle=args.shuffle)
+        input_shape = (1, 28, 28)
+
+    elif args.dataset_name == 'omniglot':
+
+        train_loader, test_loader, validation_loader = load_omniglot(batch_size=args.batch_size,
+                                                                     shuffle=args.shuffle)
+        input_shape = (1, 105, 105)
+
+    elif args.dataset_name == 'cifar10':
+
+        train_loader, test_loader, validation_loader = load_cifar10(batch_size=args.batch_size,
+                                                                    shuffle=args.shuffle)
+        input_shape = (3, 32, 32)
+
+    elif args.dataset_name == 'bedrooms':
+
+        train_loader, test_loader, validation_loader = load_bedrooms(batch_size=args.batch_size,
+                                                                     shuffle=args.shuffle)
+        input_shape = (3, 28, 28)
+
+    elif args.dataset_name == 'dSprites':
+
+        train_loader, test_loader, validation_loader, dataset_type = load_dSprites(batch_size=args.batch_size,
+                                                                                   shuffle=args.shuffle)
+        input_shape = dSpritesDataset.shape
+
+    else:
+        raise ValueError('Wrond dataset name')
+
+    return train_loader, validation_loader, test_loader, input_shape, dataset_type
 
 
 def load_dSprites(root_dir=None, batch_size=20,
@@ -52,7 +103,6 @@ def load_dSprites(root_dir=None, batch_size=20,
     idx_train, idx_test = indices[split_test:], indices[:split_test]
     split_val = int(np.floor(0.2 * size_train))
     idx_train, idx_val = idx_train[split_val:], idx_train[:split_val]
-
 
     sampler_train = SubsetSampler(idx_train)
     sampler_val = SubsetSampler(idx_val)
@@ -269,7 +319,7 @@ def load_omniglot(root_dir=None, batch_size=20, shuffle=True, transform=None, do
 
     if split % batch_size != 0:
         raise ValueError(f'The batch size: {batch_size} does not divide the size of '
-                         f'the train_dataset: {size_train-split} or the size of the validation_dataset: {split}')
+                         f'the train_dataset: {size_train - split} or the size of the validation_dataset: {split}')
 
     if shuffle:
         np.random.shuffle(indices)
@@ -312,7 +362,7 @@ def load_cifar10(root_dir=None, batch_size=20, shuffle=True, transform=None, dow
 
     if split % batch_size != 0:
         raise ValueError(f'The batch size: {batch_size} does not divide the size of '
-                         f'the train_dataset: {size_train-split} or the size of the validation_dataset: {split}')
+                         f'the train_dataset: {size_train - split} or the size of the validation_dataset: {split}')
 
     if shuffle:
         np.random.shuffle(indices)

@@ -1,8 +1,10 @@
 import math
 
 import numpy as np
+
 import torch
 import torch.nn as nn
+from torchvision.utils import make_grid
 
 from utils.plot_utils import plot_grid_images_file
 
@@ -13,7 +15,7 @@ def train_epoch(model,
                 optimizer,
                 beta,
                 device=torch.device("cpu"),
-                output_dir=None):
+                writer=None):
     model.train()
 
     batch_losses = np.zeros(len(loader))
@@ -35,13 +37,16 @@ def train_epoch(model,
 
         xs = xs.view(loader.batch_size, -1).to(device)
 
-        if batch_idx == 0 and output_dir is not None:
-            xs_reconstructed = model.get_reconstruction(xs)
-            plot_reconstruction(xs[:10],
-                                xs_reconstructed[:10],
-                                input_shape,
-                                epoch,
-                                output_dir)
+        if batch_idx == 0 and writer is not None:
+
+            recs = model.get_reconstruction(xs)
+
+            shape = (-1,) + input_shape
+            n = min(xs.size(0), 10)
+
+            grid = make_grid(recs.reshape(shape), nrow=n)
+
+            writer.add_image(f'reconstructions/train', grid, epoch)
 
         loss, NLL, KL = model.calculate_loss(xs, beta=beta)
         loss.backward()
@@ -119,54 +124,51 @@ def train_on_dataset(model,
                      warmup=None,
                      early_stopping_tolerance=10,
                      device=torch.device("cpu"),
-                     output_dir=None):
+                     writer=None):
     best_loss = math.inf
     early_stopping_strikes = 0
 
-    train_loss = np.zeros(epochs)
-    train_RE = np.zeros_like(train_loss)
-    train_KL = np.zeros_like(train_loss)
-    val_loss = np.zeros_like(train_loss)
-    val_RE = np.zeros_like(train_loss)
-    val_KL = np.zeros_like(train_loss)
+    model.train()
 
-    path_output_file = output_dir / 'output.txt'
+    for epoch in range(epochs):
 
-    with open(path_output_file, 'w', buffering=1) as f:
+        beta = compute_beta(epoch, warmup)
 
-        for epoch in range(epochs):
+        loss_train, RE_train, KL_train = train_epoch(model=model,
+                                                     loader=loader_train,
+                                                     optimizer=optimizer,
+                                                     epoch=epoch,
+                                                     beta=beta,
+                                                     device=device,
+                                                     writer=writer)
 
-            beta = compute_beta(epoch, warmup)
+        loss_val, RE_val, KL_val = validation_epoch(model=model,
+                                                    beta=beta,
+                                                    loader=loader_validation,
+                                                    device=device)
 
-            f.write(f'Training with beta = {beta}\n')
+        # logging
 
-            train_loss[epoch], train_RE[epoch], train_KL[epoch] = train_epoch(model=model,
-                                                                              loader=loader_train,
-                                                                              optimizer=optimizer,
-                                                                              epoch=epoch,
-                                                                              beta=beta,
-                                                                              device=device,
-                                                                              output_dir=output_dir)
+        if writer is not None:
+            writer.add_scalar('loss/train', loss_train, epoch)
+            writer.add_scalar('RE/train', RE_train, epoch)
+            writer.add_scalar('KL/train', KL_train, epoch)
 
-            val_loss[epoch], val_RE[epoch], val_KL[epoch] = validation_epoch(model=model,
-                                                                             beta=beta,
-                                                                             loader=loader_validation,
-                                                                             device=device)
+            writer.add_scalar('loss/val', loss_val, epoch)
+            writer.add_scalar('RE/val', RE_val, epoch)
+            writer.add_scalar('KL/val', KL_val, epoch)
 
-            f.write(f'epoch: {epoch}/{epochs}\n'
-                    f'train loss: {train_loss[epoch]} and val loss: {val_loss[epoch]}\n'
-                    f'train RE: {train_RE[epoch]} and val RE: {val_RE[epoch]}\n'
-                    f'train KL: {train_KL[epoch]} and val KL: {val_KL[epoch]}\n\n')
+        # Early stopping
 
-            if val_loss[epoch] < best_loss:
+        if loss_val < best_loss:
 
-                early_stopping_strikes = 0
-                best_loss = val_loss[epoch]
+            early_stopping_strikes = 0
+            best_loss = loss_val
 
-            elif warmup is not None and epoch > warmup:
+        elif warmup is not None and epoch > warmup:
 
-                early_stopping_strikes += 1
-                if early_stopping_strikes >= early_stopping_tolerance:
-                    break
+            early_stopping_strikes += 1
+            if early_stopping_strikes >= early_stopping_tolerance:
+                break
 
-    return model, (train_loss, train_RE, train_KL), (val_loss, val_RE, val_KL)
+    return model

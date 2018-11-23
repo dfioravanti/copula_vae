@@ -1,6 +1,7 @@
 import argparse
 import json
 import pathlib
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -22,6 +23,8 @@ def get_args():
                         help='Should TensorBoard be used (default: True)')
     parser.add_argument('--verbose', action='store_true', default=True,
                         help='enables verbose behaviour')
+    parser.add_argument('--to_file', action='store_true', default=True,
+                        help='Redirects stdout to file output.txt (default: True)')
 
     # random seed
     parser.add_argument('--seed', type=int, default=42, metavar='S',
@@ -83,7 +86,9 @@ def get_args():
     else:
         folder_name = f'{folder_name}_{args.architecture}_{args.s_size}'
 
-    args.output_dir = pathlib.Path(args.output_dir) / folder_name
+    current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+    args.output_dir = pathlib.Path(args.output_dir) / folder_name / current_time
+    args.log_dir = args.output_dir / 'logs'
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     with open(args.output_dir / 'config.json', 'w') as f:
@@ -94,13 +99,10 @@ def get_args():
 
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    args.log_dir = args.output_dir / 'logs'
-    args.log_dir.mkdir(parents=True, exist_ok=True)
-
     return args
 
 
-def get_model(args, input_shape, dataset_type):
+def get_model(args, input_shape, dataset_type, output_dir=None):
     if args.architecture == 'standard':
         model = VAE(dimension_latent_space=args.s_size,
                     input_shape=input_shape,
@@ -130,6 +132,10 @@ def get_model(args, input_shape, dataset_type):
                           device=args.device)
     else:
         raise ValueError(f'We do not support {args.architecture} as architecture')
+
+    if output_dir is not None:
+        with open(output_dir / 'model.txt', 'w') as f:
+            print(model, file=f)
 
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")

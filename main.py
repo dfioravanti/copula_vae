@@ -1,3 +1,4 @@
+import sys
 import random
 
 import numpy as np
@@ -14,6 +15,8 @@ def main(args):
     train_loader, validation_loader, test_loader, \
     input_shape, dataset_type = load_dataset(args)
 
+    print('Loaded datased')
+
     writer = SummaryWriter(str(args.log_dir)) if args.log_dir is not None else None
     if writer is not None:
         for arg in vars(args):
@@ -21,17 +24,19 @@ def main(args):
 
     model = get_model(args=args,
                       input_shape=input_shape,
-                      dataset_type=dataset_type)
+                      dataset_type=dataset_type,
+                      output_dir=args.output_dir)
 
-    model, writer = train_on_dataset(model=model,
-                                     loader_train=train_loader,
-                                     loader_validation=validation_loader,
-                                     optimizer=Adam(model.parameters(), lr=args.lr),
-                                     epochs=args.epochs,
-                                     warmup=args.warmup,
-                                     early_stopping_tolerance=args.early_stopping_epochs,
-                                     device=args.device,
-                                     writer=writer)
+    model = train_on_dataset(model=model,
+                             loader_train=train_loader,
+                             loader_validation=validation_loader,
+                             optimizer=Adam(model.parameters(), lr=args.lr),
+                             epochs=args.epochs,
+                             warmup=args.warmup,
+                             early_stopping_tolerance=args.early_stopping_epochs,
+                             device=args.device,
+                             output_dir=args.output_dir,
+                             writer=writer)
 
     torch.save(model.state_dict(), args.output_dir / 'model_trained')
 
@@ -56,4 +61,9 @@ if __name__ == '__main__':
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
 
-    main(args)
+    if args.to_file:
+        with open(args.output_dir / 'output.txt', 'w', buffering=1) as f:
+            sys.stdout = f
+            main(args)
+    else:
+        main(args)

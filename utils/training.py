@@ -4,9 +4,9 @@ import numpy as np
 
 import torch
 import torch.nn as nn
-from torchvision.utils import make_grid
+from torchvision.utils import make_grid, save_image
 
-from utils.plot_utils import plot_grid_images_file
+import matplotlib.pyplot as plt
 
 
 def train_epoch(model,
@@ -15,6 +15,7 @@ def train_epoch(model,
                 optimizer,
                 beta,
                 device=torch.device("cpu"),
+                rec_img_path=None,
                 writer=None):
     model.train()
 
@@ -44,8 +45,11 @@ def train_epoch(model,
             n = min(xs.size(0), 10)
 
             grid = make_grid(recs.reshape(shape), nrow=n)
-
             writer.add_image(f'reconstructions/train', grid, epoch)
+
+            save_image(tensor=recs.reshape(shape),
+                       filename=rec_img_path / f'epoch_{epoch:0=2d}.png',
+                       nrow=n)
 
         loss, NLL, KL = model.calculate_loss(xs, beta=beta)
         loss.backward()
@@ -97,24 +101,6 @@ def compute_beta(epoch, warmup):
     return beta
 
 
-def plot_reconstruction(xs,
-                        xs_reconstructed,
-                        input_shape,
-                        epoch,
-                        output_dir):
-    xs = xs.view((-1,) + input_shape)
-    xs_reconstructed = xs_reconstructed.view((-1,) + input_shape)
-
-    image_dir = output_dir / 'images'
-    image_dir.mkdir(parents=True, exist_ok=True)
-    filename = image_dir / f'Epoch {epoch}'
-
-    plot_grid_images_file(xs.to('cpu').detach().numpy()[0:10, :],
-                          xs_reconstructed.to('cpu').detach().numpy()[0:10, :],
-                          columns=10,
-                          filename=filename)
-
-
 def train_on_dataset(model,
                      loader_train,
                      loader_validation,
@@ -123,11 +109,15 @@ def train_on_dataset(model,
                      warmup=None,
                      early_stopping_tolerance=10,
                      device=torch.device("cpu"),
+                     output_dir=None,
                      writer=None):
     best_loss = math.inf
     early_stopping_strikes = 0
 
     model.train()
+
+    rec_img_path = output_dir / 'rec_img'
+    rec_img_path.mkdir(parents=True, exist_ok=True)
 
     for epoch in range(epochs):
 
@@ -139,12 +129,19 @@ def train_on_dataset(model,
                                                      epoch=epoch,
                                                      beta=beta,
                                                      device=device,
+                                                     rec_img_path=rec_img_path,
                                                      writer=writer)
 
         loss_val, RE_val, KL_val = validation_epoch(model=model,
                                                     beta=beta,
                                                     loader=loader_validation,
                                                     device=device)
+
+        print(f'epoch: {epoch}/{epochs}\n'
+              f'beta: {beta}\n'
+              f'loss train: {loss_train} and loss val: {loss_val}\n'
+              f'RE train: {RE_train} and RE val: {RE_val}\n'
+              f'KL train: {KL_train} and KL val: {KL_val}\n')
 
         # logging
 
@@ -177,4 +174,4 @@ def train_on_dataset(model,
             if early_stopping_strikes >= early_stopping_tolerance:
                 break
 
-    return model, writer
+    return model

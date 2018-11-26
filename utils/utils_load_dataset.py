@@ -10,7 +10,6 @@ class ToBinary(object):
     """
 
     def __call__(self, x):
-
         p = x.numpy()
         y = np.random.binomial(1, p)
         return torch.from_numpy(y)

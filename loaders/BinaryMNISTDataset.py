@@ -9,7 +9,7 @@ import pandas as pd
 import torch.utils.data as data_utils
 
 import numpy as np
-from utils.file_utils import exists_and_correct_hash
+from utils.HashTools import exists_and_correct_sha1
 
 
 class BinaryMNISTDataset(data_utils.Dataset):
@@ -72,7 +72,7 @@ class BinaryMNISTDataset(data_utils.Dataset):
             print(f'dataset directory is {self.dataset_path}')
 
             if test:
-                if not exists_and_correct_hash(self.test_path, BinaryMNISTDataset.sha1_test):
+                if not exists_and_correct_sha1(self.test_path, BinaryMNISTDataset.sha1_test):
                     print('Downloading test')
                     urllib.request.urlretrieve(BinaryMNISTDataset.URL_test,
                                                self.test_path)
@@ -80,7 +80,7 @@ class BinaryMNISTDataset(data_utils.Dataset):
                     print('test exists and the hash matches, skip')
 
             if train:
-                if not exists_and_correct_hash(self.train_path, BinaryMNISTDataset.sha1_train):
+                if not exists_and_correct_sha1(self.train_path, BinaryMNISTDataset.sha1_train):
                     print('Downloading train')
                     urllib.request.urlretrieve(BinaryMNISTDataset.URL_train,
                                                self.train_path)
@@ -88,7 +88,7 @@ class BinaryMNISTDataset(data_utils.Dataset):
                     print('train exists and the hash matches, skip')
 
             if validation:
-                if not exists_and_correct_hash(self.valid_path, BinaryMNISTDataset.sha1_validation):
+                if not exists_and_correct_sha1(self.valid_path, BinaryMNISTDataset.sha1_validation):
                     print('Downloading validation')
                     urllib.request.urlretrieve(BinaryMNISTDataset.URL_validation,
                                                self.valid_path)

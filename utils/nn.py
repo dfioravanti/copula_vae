@@ -36,6 +36,8 @@ class View(nn.Module):
 
 class ICDF(nn.Module):
 
+    # TODO: Print the marginal name with extra_rep
+
     def __init__(self, in_features, marginals='gaussian'):
 
         super(ICDF, self).__init__()
@@ -67,6 +69,7 @@ class ICDF(nn.Module):
             return cauchy_icdf(value=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
         elif self.distribution == 'exp':
             return exp_icdf(value=x, rate=torch.log(torch.exp(self.scale) + 1))
+
 
 class GatedDense(nn.Module):
     def __init__(self, input_size, output_size):

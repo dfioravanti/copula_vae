@@ -6,7 +6,7 @@ import numpy as np
 
 import torch.utils.data as data_utils
 
-from utils.file_utils import exists_and_correct_hash
+from utils.HashTools import exists_and_correct_sha1
 
 
 class dSpritesDataset(data_utils.Dataset):
@@ -38,7 +38,7 @@ class dSpritesDataset(data_utils.Dataset):
             if verbose:
                 print(f'dataset directory is {self.dataset_root_path}')
 
-            if not exists_and_correct_hash(self.dataset_path, dSpritesDataset.sha1):
+            if not exists_and_correct_sha1(self.dataset_path, dSpritesDataset.sha1):
                 if verbose:
                     print('Downloading')
 

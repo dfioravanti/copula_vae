@@ -159,14 +159,3 @@ def get_model(args, input_shape, dataset_type, output_dir=None):
     model = model.to(args.device)
 
     return model
-
-
-def choose_loss_function(loss='L2'):
-    if loss == 'L1':
-        return nn.L1Loss()
-    elif loss == 'L2':
-        return nn.MSELoss()
-    elif loss == 'BCE':
-        return nn.BCELoss()
-    else:
-        raise NotImplementedError("Unknown loss function")

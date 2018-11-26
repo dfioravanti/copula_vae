@@ -85,3 +85,63 @@ def mnemonify_hash(hash_string):
     animal = words['animals'][hash_list[0] % len(words['animals'])]
 
     return '-'.join([adverb, adjective, animal])
+
+
+# -----------------------------------------------------------------------------
+
+
+def compute_sha1(path, buf_size=65536):
+    """
+    Takes a path and compute the hash of that file.
+    In order to process huge files we break them in chunks of buf_size dimension
+
+    Parameters
+    ----------
+        path: str or Path
+            Path to the file
+        buf_size: int
+            size of the chunks we divide the file into
+
+    Returns
+    ----------
+    int
+        sha1 of the file
+    """
+
+    # lets read stuff in 64kb chunks!
+
+    sha1 = hashlib.sha1()
+
+    with open(path, 'rb') as f:
+        while True:
+            data = f.read(buf_size)
+            if not data:
+                break
+
+            sha1.update(data)
+
+    return sha1.hexdigest()
+
+
+# -----------------------------------------------------------------------------
+
+
+def exists_and_correct_sha1(path, hash):
+    """
+    Check if a path is a file and if so compute its sha1 and check it against
+    a given sha1 string
+
+    Parameters
+    ----------
+    path: Path
+        Path to the file
+    hash: Int
+        sha1 to check against
+
+    Returns
+    -------
+    bool
+        True if exists and the sha1 match, False otherwise
+    """
+
+    return True if os.path.isfile(path) and compute_sha1(path) == hash else False

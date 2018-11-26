@@ -29,7 +29,7 @@ def main(args):
 
     model = train_on_dataset(model=model, loader_train=train_loader, loader_validation=validation_loader,
                              optimizer=Adam(model.parameters(), lr=args.lr), epochs=args.epochs, warmup=args.warmup,
-                             early_stopping_tolerance=args.early_stopping_epochs, output_dir=args.output_dir,
+                             grace_early_stopping=args.grace_early_stopping, output_dir=args.output_dir,
                              writer=writer, device=args.device)
 
     torch.save(model.state_dict(), args.output_dir / 'model_trained')

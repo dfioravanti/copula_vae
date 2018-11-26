@@ -1,7 +1,9 @@
 import argparse
-import json
-import pathlib
 from datetime import datetime
+import yaml
+from types import SimpleNamespace
+import sys
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -13,6 +15,69 @@ from utils.HashTools import mnemonify_hash, string_to_md5
 
 
 def get_args():
+
+    main_path = Path(sys.argv[0]).parent
+    args = parse_config(main_path)
+
+    args_as_yaml = yaml.dump(vars(args))
+    mnemonic_name_arguments = mnemonify_hash(string_to_md5(args_as_yaml))
+
+    # Change some args to be more useful
+    args.cuda = args.cuda and torch.cuda.is_available()
+    args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if args.warmup == 0:
+        args.warmup = None
+
+    # Create folders
+
+    if args.dynamic_binarization:
+        experiment_description = f'{args.dataset_name}_bin'
+    else:
+        experiment_description = f'{args.dataset_name}'
+    if args.architecture == 'copula':
+        experiment_description = f'{experiment_description}_{args.marginals}_{args.architecture}'
+    else:
+        experiment_description = f'{experiment_description}_{args.architecture}'
+
+    experiment_description = f'{experiment_description}_{args.latent_size}'
+
+    current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+    args.output_dir = Path(args.output_dir) / experiment_description / mnemonic_name_arguments / current_time
+    args.log_dir = args.output_dir / 'logs'
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save config file for future use
+
+    with open(args.output_dir / 'config.yml', 'w') as f:
+        f.write(args_as_yaml)
+
+    return args
+
+
+def parse_config(main_dir):
+    cfg = SimpleNamespace()
+
+    with open(main_dir / 'defaults.yml', 'r') as f:
+        defaults = yaml.load(f)
+
+    for _, section in defaults.items():
+        for arg, value in section.items():
+            cfg.__setattr__(arg, value)
+
+    experiment_config_path = main_dir / 'experiment.yml'
+    if experiment_config_path.is_file():
+
+        with open(experiment_config_path, 'r') as f:
+            defaults = yaml.load(f)
+
+        for _, section in defaults.items():
+            for arg, value in section.items():
+                cfg.__setattr__(arg, value)
+
+    return cfg
+
+
+def parse_command_line():
     # Training settings
     parser = argparse.ArgumentParser(description='VAE')
 
@@ -76,55 +141,25 @@ def get_args():
     parser.add_argument('--shuffle', action='store_true', default=False,
                         help='shuffle the dataset (default: False)')
 
-    args = parser.parse_args()
-    args_as_json = json.dumps(vars(args))
-    mnemonic_name_arguments = mnemonify_hash(string_to_md5(args_as_json))
-
-    args.cuda = args.cuda and torch.cuda.is_available()
-
-    if args.dynamic_binarization:
-        experiment_description = f'{args.dataset_name}_bin'
-    else:
-        experiment_description = f'{args.dataset_name}'
-    if args.architecture == 'copula':
-        experiment_description = f'{experiment_description}_{args.marginals}_{args.architecture}'
-    else:
-        experiment_description = f'{experiment_description}_{args.architecture}'
-
-    experiment_description = f'{experiment_description}_{args.s_size}'
-
-    current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    args.output_dir = pathlib.Path(args.output_dir) / experiment_description / mnemonic_name_arguments / current_time
-    args.log_dir = args.output_dir / 'logs'
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-
-    with open(args.output_dir / 'config.json', 'w') as f:
-        f.write(args_as_json)
-
-    if args.warmup == 0:
-        args.warmup = None
-
-    args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    return args
+    return parser.parse_args()
 
 
 def get_model(args, input_shape, dataset_type, output_dir=None):
     if args.architecture == 'standard':
-        model = VAE(dimension_latent_space=args.s_size,
+        model = VAE(dimension_latent_space=args.latent_size,
                     input_shape=input_shape,
                     encoder_output_size=300,
                     dataset_type=dataset_type,
                     device=args.device)
 
     elif args.architecture == 'conv':
-        model = ConvMarginalVAE(dimension_latent_space=args.s_size,
+        model = ConvMarginalVAE(dimension_latent_space=args.latent_size,
                                 input_shape=input_shape,
                                 dataset_type=dataset_type,
                                 device=args.device)
 
     elif args.architecture == 'copula':
-        model = MarginalVAE(dimension_latent_space=args.s_size,
+        model = MarginalVAE(dimension_latent_space=args.latent_size,
                             input_shape=input_shape,
                             encoder_output_size=300,
                             dataset_type=dataset_type,
@@ -132,7 +167,7 @@ def get_model(args, input_shape, dataset_type, output_dir=None):
                             device=args.device)
 
     elif args.architecture == 'copula2':
-        model = CopulaVAE(dimension_latent_space=args.s_size,
+        model = CopulaVAE(dimension_latent_space=args.latent_size,
                           input_shape=input_shape,
                           encoder_output_size=300,
                           dataset_type=dataset_type,

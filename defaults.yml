@@ -1,0 +1,71 @@
+# Default config, they can be overwritten via experiment.yml
+
+output:
+
+  # Path for the main output directory
+  output_dir: ./outputs
+
+  # Enable logging with tensorboard
+  tensorbord: yes
+
+  # Enable printing
+  verbose: yes
+
+  # Redirects stdout to file output.txt
+  to_file: yes
+
+optimization:
+
+  # Input batch size for training and validation
+  batch_size: 100
+
+  # Number of epochs for training
+  epochs: 2000
+
+  # learning rate
+  lr: 0.0003
+
+  # Grace period for early stopping
+  grace_early_stopping: 50
+
+  # Number of warmup epochs
+  warmup: 200
+
+experiment:
+
+  # Size of the latent space
+  latent_size: 50
+
+  # Type of architecture ot be used.
+  # Possible options: standard, conv, copula, copula2
+  architecture: standard
+
+  # Type of marginals that should we used in the architecture. It is ignored if not required
+  # Possible options: gaussian, laplace, log_norm, cauchy, exp'
+  marginals: gaussian
+
+  # Number of samples used for approximating the log-likelihood
+  S: 5000
+
+dataset:
+
+  # Name of the database to load
+  # Possible options: binary_mnist, mnist, bedrooms, omniglot, cifar10, fashionmnist, dSprites
+  dataset_name: mnist
+
+  # Allow dynamic binarization. Ignored if it does not make sense
+  dynamic_binarization: yes
+
+  # Shuffle the dataset
+  shuffle: no
+
+extra:
+
+  # Set random seed for reproducibility
+  seed: 42
+
+  # Enable cuda if available
+  cuda: yes
+
+  # Check and load checkpoint if available
+  load_checkpoint: yes

@@ -90,7 +90,7 @@ def compute_beta(epoch, warmup):
 
 
 def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=50, warmup=None,
-                     early_stopping_tolerance=10, output_dir=None, writer=None, checkpoint=None,
+                     grace_early_stopping=10, output_dir=None, writer=None, checkpoint=None,
                      device=torch.device("cpu")):
     best_loss = math.inf
     early_stopping_strikes = 0
@@ -151,7 +151,7 @@ def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=5
         elif warmup is not None and epoch > warmup:
 
             early_stopping_strikes += 1
-            if early_stopping_strikes >= early_stopping_tolerance:
+            if early_stopping_strikes >= grace_early_stopping:
                 break
 
     return model

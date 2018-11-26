@@ -39,7 +39,7 @@ def get_args():
 
     experiment_description = f'{experiment_description}_{args.architecture}_{args.type_vae}'
 
-    if args.architecture == 'copula':
+    if args.type_vae == 'copula' or args.type_vae == 'diagonal':
         experiment_description = f'{experiment_description}_{args.marginals}'
 
     experiment_description = f'{experiment_description}_{args.latent_size}'

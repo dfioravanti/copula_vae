@@ -37,7 +37,7 @@ def main(args):
 
     torch.save(model.state_dict(), args.output_dir / 'model_trained')
 
-    results_test = model.calculate_likelihood(train_loader,
+    results_test = model.calculate_likelihood(test_loader,
                                               number_samples=args.S,
                                               writer=writer
                                               )

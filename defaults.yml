@@ -36,9 +36,13 @@ experiment:
   # Size of the latent space
   latent_size: 50
 
+  # Type of VAE to use
+  # Possible options: standard, copula, copulaV2
+  type_vae: standard
+
   # Type of architecture ot be used.
-  # Possible options: standard, conv, copula, copula2
-  architecture: standard
+  # Possible options: shallow, deep, conv
+  architecture: shallow
 
   # Type of marginals that should we used in the architecture. It is ignored if not required
   # Possible options: gaussian, laplace, log_norm, cauchy, exp'

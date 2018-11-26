@@ -4,18 +4,19 @@ import yaml
 from types import SimpleNamespace
 import sys
 from pathlib import Path
+import shutil
 
 import torch
 import torch.nn as nn
 
-from models.LayerBauer import CopulaVAE, MarginalVAE
-from models.LayerBetaVAE import ConvMarginalVAE
+from models.ShallowLayer import ShallowCopulaVAE, ShallowMarginalVAE
+from models.ConvLayer import ConvMarginalVAE
+from models.DeepLayer import DeepMarginalVAE
 from models.VAE import VAE
 from utils.HashTools import mnemonify_hash, string_to_md5
 
 
 def get_args():
-
     main_path = Path(sys.argv[0]).parent
     args = parse_config(main_path)
 
@@ -30,14 +31,14 @@ def get_args():
 
     # Create folders
 
+    experiment_description = f'{args.dataset_name}'
     if args.dynamic_binarization:
-        experiment_description = f'{args.dataset_name}_bin'
-    else:
-        experiment_description = f'{args.dataset_name}'
+        experiment_description = f'{experiment_description}_bin'
+
+    experiment_description = f'{experiment_description}_{args.architecture}_{args.type_vae}'
+
     if args.architecture == 'copula':
-        experiment_description = f'{experiment_description}_{args.marginals}_{args.architecture}'
-    else:
-        experiment_description = f'{experiment_description}_{args.architecture}'
+        experiment_description = f'{experiment_description}_{args.marginals}'
 
     experiment_description = f'{experiment_description}_{args.latent_size}'
 
@@ -145,35 +146,52 @@ def parse_command_line():
 
 
 def get_model(args, input_shape, dataset_type, output_dir=None):
-    if args.architecture == 'standard':
-        model = VAE(dimension_latent_space=args.latent_size,
-                    input_shape=input_shape,
-                    encoder_output_size=300,
-                    dataset_type=dataset_type,
-                    device=args.device)
+    model = None
 
-    elif args.architecture == 'conv':
-        model = ConvMarginalVAE(dimension_latent_space=args.latent_size,
-                                input_shape=input_shape,
-                                dataset_type=dataset_type,
-                                device=args.device)
+    if args.type_vae == 'standard':
 
-    elif args.architecture == 'copula':
-        model = MarginalVAE(dimension_latent_space=args.latent_size,
-                            input_shape=input_shape,
-                            encoder_output_size=300,
-                            dataset_type=dataset_type,
-                            marginals=args.marginals,
-                            device=args.device)
+        if args.architecture == 'shallow':
+            model = VAE(dimension_latent_space=args.latent_size,
+                        input_shape=input_shape,
+                        encoder_output_size=300,
+                        dataset_type=dataset_type,
+                        device=args.device)
 
-    elif args.architecture == 'copula2':
-        model = CopulaVAE(dimension_latent_space=args.latent_size,
-                          input_shape=input_shape,
-                          encoder_output_size=300,
-                          dataset_type=dataset_type,
-                          device=args.device)
-    else:
-        raise ValueError(f'We do not support {args.architecture} as architecture')
+    elif args.type_vae == 'copula':
+
+        if args.architecture == 'shallow':
+            model = ShallowMarginalVAE(dimension_latent_space=args.latent_size,
+                                       input_shape=input_shape,
+                                       encoder_output_size=300,
+                                       dataset_type=dataset_type,
+                                       marginals=args.marginals,
+                                       device=args.device)
+
+        elif args.architecture == 'deep':
+            model = DeepMarginalVAE(dimension_latent_space=args.latent_size,
+                                    input_shape=input_shape,
+                                    encoder_output_size=300,
+                                    dataset_type=dataset_type,
+                                    marginals=args.marginals,
+                                    device=args.device)
+
+        elif args.architecture == 'conv':
+            model = ConvMarginalVAE(dimension_latent_space=args.latent_size,
+                                    input_shape=input_shape,
+                                    dataset_type=dataset_type,
+                                    device=args.device)
+
+    elif args.type_vae == 'copulaV2':
+        if args.architecture == 'shallow':
+            model = ShallowCopulaVAE(dimension_latent_space=args.latent_size,
+                                     input_shape=input_shape,
+                                     encoder_output_size=300,
+                                     dataset_type=dataset_type,
+                                     device=args.device)
+
+    if model is None:
+        error = f'We do not support {args.type_vae} with {args.architecture} as architecture'
+        raise NotImplementedError(error)
 
     if output_dir is not None:
         with open(output_dir / 'model.txt', 'w') as f:

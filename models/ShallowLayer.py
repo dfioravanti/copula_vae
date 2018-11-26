@@ -7,7 +7,7 @@ from models.BaseCopulaVAE import BaseCopulaVAE
 from utils.nn import ICDF
 
 
-class MarginalVAE(BaseCopulaVAE):
+class ShallowMarginalVAE(BaseCopulaVAE):
 
     def __init__(self,
                  dimension_latent_space,
@@ -17,10 +17,10 @@ class MarginalVAE(BaseCopulaVAE):
                  marginals='gaussian',
                  device=torch.device("cpu")):
 
-        super(MarginalVAE, self).__init__(dimension_latent_space=dimension_latent_space,
-                                          input_shape=input_shape,
-                                          dataset_type=dataset_type,
-                                          device=device)
+        super(ShallowMarginalVAE, self).__init__(dimension_latent_space=dimension_latent_space,
+                                                 input_shape=input_shape,
+                                                 dataset_type=dataset_type,
+                                                 device=device)
 
         self.encoder_output_size = encoder_output_size
         self.marginals = marginals
@@ -69,7 +69,7 @@ class MarginalVAE(BaseCopulaVAE):
         return self.F(s)
 
 
-class CopulaVAE(BaseCopulaVAE):
+class ShallowCopulaVAE(BaseCopulaVAE):
 
     def __init__(self,
                  dimension_latent_space,
@@ -78,10 +78,10 @@ class CopulaVAE(BaseCopulaVAE):
                  encoder_output_size=300,
                  device=torch.device("cpu")):
 
-        super(CopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
-                                        input_shape=input_shape,
-                                        dataset_type=dataset_type,
-                                        device=device)
+        super(ShallowCopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
+                                               input_shape=input_shape,
+                                               dataset_type=dataset_type,
+                                               device=device)
 
         self.encoder_output_size = encoder_output_size
         self.number_neurons_L = dimension_latent_space * (dimension_latent_space + 1) // 2

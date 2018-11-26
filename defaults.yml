@@ -63,6 +63,19 @@ dataset:
   # Shuffle the dataset
   shuffle: no
 
+checkpointing:
+
+  # Should I checkpoint the model every fixed number of epochs
+  checkpointing: yes
+
+  # Every how many epochs do I checkpoint
+  # 0 means that we checkpoint every 5% of number of epochs
+  # This is ignored if checkpointing is false
+  frequency_checkpoints: 0
+
+  # Check and load checkpoint if available
+  load_checkpoint: yes
+
 extra:
 
   # Set random seed for reproducibility
@@ -70,6 +83,3 @@ extra:
 
   # Enable cuda if available
   cuda: yes
-
-  # Check and load checkpoint if available
-  load_checkpoint: yes

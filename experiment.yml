@@ -1,6 +1,9 @@
-# Default config, they can be overwritten via experiment.yml
+# Experiment config, this overwrites the defaults.
 
 output:
+
+  # Path for the main output directory
+  output_dir: ./outputs
 
   # Enable logging with tensorboard
   tensorbord: yes
@@ -9,7 +12,7 @@ output:
   verbose: yes
 
   # Redirects stdout to file output.txt
-  to_file: no
+  to_file: yes
 
 optimization:
 
@@ -21,6 +24,12 @@ optimization:
 
   # learning rate
   lr: 0.0003
+
+  # Grace period for early stopping
+  grace_early_stopping: 50
+
+  # Number of warmup epochs
+  warmup: 200
 
 experiment:
 
@@ -48,5 +57,15 @@ dataset:
   # Possible options: binary_mnist, mnist, bedrooms, omniglot, cifar10, fashionmnist, dSprites
   dataset_name: mnist
 
+  # Allow dynamic binarization. Ignored if it does not make sense
+  dynamic_binarization: yes
+
   # Shuffle the dataset
   shuffle: no
+
+checkpointing:
+
+  # Every how many epochs do I checkpoint
+  # 0 means that we checkpoint every 5% of number of epochs
+  # This is ignored if checkpointing is false
+  frequency_checkpoints: 0

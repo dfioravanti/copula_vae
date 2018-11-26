@@ -89,8 +89,8 @@ def compute_beta(epoch, warmup):
     return beta
 
 
-def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=50, warmup=None,
-                     grace_early_stopping=10, output_dir=None, writer=None, checkpoint=None,
+def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=50, warmup=None, grace_early_stopping=10,
+                     checkpoint=None, output_dir=None, frequency_checkpoints=None, checkpoint_dir=None, writer=None,
                      device=torch.device("cpu")):
     best_loss = math.inf
     early_stopping_strikes = 0
@@ -133,25 +133,33 @@ def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=5
             writer.add_scalar(tag='KL/train', scalar_value=KL_train, global_step=epoch)
             writer.add_scalar(tag='KL/val', scalar_value=KL_val, global_step=epoch)
 
-        # Early stopping and checkpointing best model
+        if warmup is None or epoch > warmup:
 
-        if loss_val < best_loss:
+            # Checkpointing
 
-            early_stopping_strikes = 0
-            best_loss = loss_val
-
-            if warmup is None or epoch > warmup:
+            if frequency_checkpoints is not None and epoch % frequency_checkpoints == 0:
                 torch.save({
                     'epoch': epoch,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': loss_train,
-                }, output_dir / 'best.tar')
+                }, checkpoint_dir / f'model_epoch_{epoch:0=3d}.tar')
 
-        elif warmup is not None and epoch > warmup:
+            # Early stopping and checkpointing best model
 
-            early_stopping_strikes += 1
-            if early_stopping_strikes >= grace_early_stopping:
-                break
+            if loss_val < best_loss:
+                early_stopping_strikes = 0
+                best_loss = loss_val
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': loss_train,
+                }, checkpoint_dir / 'best.tar')
+
+            else:
+                early_stopping_strikes += 1
+                if early_stopping_strikes >= grace_early_stopping:
+                    break
 
     return model

@@ -28,6 +28,10 @@ def get_args():
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if args.warmup == 0:
         args.warmup = None
+    if not args.checkpointing:
+        args.frequency_checkpoints = None
+    if args.frequency_checkpoints == 0:
+        args.frequency_checkpoints = args.epochs // 100 * 5
 
     # Create folders
 
@@ -46,6 +50,9 @@ def get_args():
     args.output_dir = Path(args.output_dir) / experiment_description / mnemonic_name_arguments / current_time
     args.log_dir = args.output_dir / 'logs'
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    if args.frequency_checkpoints is not None:
+        args.checkpoint_dir = args.output_dir / "checkpoints"
+        args.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     # Save config file for future use
 

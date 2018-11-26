@@ -1,7 +1,7 @@
 import argparse
-import hashlib
 import json
 import pathlib
+from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -9,6 +9,7 @@ import torch.nn as nn
 from models.LayerBauer import CopulaVAE, MarginalVAE
 from models.LayerBetaVAE import ConvMarginalVAE
 from models.VAE import VAE
+from utils.HashTools import mnemonify_hash, string_to_md5
 
 
 def get_args():
@@ -77,21 +78,23 @@ def get_args():
 
     args = parser.parse_args()
     args_as_json = json.dumps(vars(args))
+    mnemonic_name_arguments = mnemonify_hash(string_to_md5(args_as_json))
 
     args.cuda = args.cuda and torch.cuda.is_available()
 
     if args.dynamic_binarization:
-        folder_name = f'{args.dataset_name}_bin'
+        experiment_description = f'{args.dataset_name}_bin'
     else:
-        folder_name = f'{args.dataset_name}'
+        experiment_description = f'{args.dataset_name}'
     if args.architecture == 'copula':
-        folder_name = f'{folder_name}_{args.marginals}_{args.architecture}'
+        experiment_description = f'{experiment_description}_{args.marginals}_{args.architecture}'
     else:
-        folder_name = f'{folder_name}_{args.architecture}'
+        experiment_description = f'{experiment_description}_{args.architecture}'
 
-    folder_name = f'{folder_name}_{args.s_size}'
+    experiment_description = f'{experiment_description}_{args.s_size}'
 
-    args.output_dir = pathlib.Path(args.output_dir) / folder_name
+    current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+    args.output_dir = pathlib.Path(args.output_dir) / experiment_description / mnemonic_name_arguments / current_time
     args.log_dir = args.output_dir / 'logs'
     args.output_dir.mkdir(parents=True, exist_ok=True)
 

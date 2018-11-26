@@ -27,22 +27,16 @@ def main(args):
                       dataset_type=dataset_type,
                       output_dir=args.output_dir)
 
-    model = train_on_dataset(model=model,
-                             loader_train=train_loader,
-                             loader_validation=validation_loader,
-                             optimizer=Adam(model.parameters(), lr=args.lr),
-                             epochs=args.epochs,
-                             warmup=args.warmup,
-                             early_stopping_tolerance=args.early_stopping_epochs,
-                             device=args.device,
-                             output_dir=args.output_dir,
-                             writer=writer)
+    model = train_on_dataset(model=model, loader_train=train_loader, loader_validation=validation_loader,
+                             optimizer=Adam(model.parameters(), lr=args.lr), epochs=args.epochs, warmup=args.warmup,
+                             early_stopping_tolerance=args.early_stopping_epochs, output_dir=args.output_dir,
+                             writer=writer, device=args.device)
 
     torch.save(model.state_dict(), args.output_dir / 'model_trained')
 
     results_test = model.calculate_likelihood(train_loader,
                                               number_samples=args.S,
-                                              output_dir=args.output_dir
+                                              writer=writer
                                               )
 
     if writer is not None:

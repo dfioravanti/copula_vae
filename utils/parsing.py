@@ -61,6 +61,9 @@ def get_args():
     parser.add_argument('--S', type=int, default=5000, metavar='SLL',
                         help='number of samples used for approximating log-likelihood')
 
+    parser.add_argument('--load_checkpoint', action='store_true', default=True,
+                        help='check and load checkpoints')
+
     # dataset
     parser.add_argument('--dataset_name', type=str, default='mnist', metavar='DN',
                         help='name of the dataset: binary_mnist, mnist, bedrooms,'

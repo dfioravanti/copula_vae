@@ -50,30 +50,30 @@ class BaseVAE(nn.Module):
     def get_decoder_layers(self):
         return
 
-    def calculate_likelihood(self, loader, number_samples, output_dir):
+    def calculate_likelihood(self, loader, number_samples, writer=None):
 
         size_dataset = len(loader.dataset)
         batch_size = loader.batch_size
-        output_file = output_dir / 'output.txt'
 
         losses = np.zeros((size_dataset, number_samples))
 
-        with open(output_file, 'a', buffering=1) as f:
+        for i, (xs, _) in enumerate(loader):
 
-            for i, (xs, _) in enumerate(loader):
+            xs = xs.view(batch_size, -1).to(self.device)
 
-                xs = xs.view(batch_size, -1).to(self.device)
+            print(f'Computing likelihood for batch number {i}\n')
 
-                f.write(f'Computing likelihood for batch number {i}\n')
+            for j in range(number_samples):
 
-                for j in range(number_samples):
+                loss, _, _ = self.calculate_loss(xs)
+                losses[i*batch_size:(i+1)*batch_size, j] = loss.cpu().detach().numpy()
 
-                    loss, _, _ = self.calculate_loss(xs)
-                    losses[i*batch_size:(i+1)*batch_size, j] = loss.cpu().detach().numpy()
+            if writer is not None:
+                writer.add_scalar(tag='loss/test', scalar_value=loss, global_step=i)
 
-            likelihood_x = logsumexp(losses, axis=1) - np.log(number_samples)
+        likelihood_x = logsumexp(losses, axis=1) - np.log(number_samples)
 
-            return np.mean(likelihood_x)
+        return np.mean(likelihood_x)
 
 
 if __name__ == '__main__':

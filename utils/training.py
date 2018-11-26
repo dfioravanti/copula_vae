@@ -6,17 +6,8 @@ import torch
 import torch.nn as nn
 from torchvision.utils import make_grid, save_image
 
-import matplotlib.pyplot as plt
 
-
-def train_epoch(model,
-                epoch,
-                loader,
-                optimizer,
-                beta,
-                device=torch.device("cpu"),
-                rec_img_path=None,
-                writer=None):
+def train_epoch(model, epoch, loader, optimizer, beta, rec_img_path=None, writer=None, device=torch.device("cpu")):
     model.train()
 
     batch_losses = np.zeros(len(loader))
@@ -66,10 +57,7 @@ def train_epoch(model,
     return epoch_loss, epoch_RE, epoch_KL
 
 
-def validation_epoch(model,
-                     beta,
-                     loader,
-                     device):
+def validation_epoch(model, beta, loader, device=torch.device("cpu")):
     model.eval()
 
     batch_losses = np.zeros(len(loader))
@@ -101,41 +89,31 @@ def compute_beta(epoch, warmup):
     return beta
 
 
-def train_on_dataset(model,
-                     loader_train,
-                     loader_validation,
-                     optimizer,
-                     epochs=50,
-                     warmup=None,
-                     early_stopping_tolerance=10,
-                     device=torch.device("cpu"),
-                     output_dir=None,
-                     writer=None):
+def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=50, warmup=None,
+                     early_stopping_tolerance=10, output_dir=None, writer=None, checkpoint=None,
+                     device=torch.device("cpu")):
     best_loss = math.inf
     early_stopping_strikes = 0
+    starting_epoch = 0
+
+    if checkpoint is not None:
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        starting_epoch = checkpoint['epoch']
 
     model.train()
 
     rec_img_path = output_dir / 'rec_img'
     rec_img_path.mkdir(parents=True, exist_ok=True)
 
-    for epoch in range(epochs):
+    for epoch in range(starting_epoch, epochs):
 
         beta = compute_beta(epoch, warmup)
 
-        loss_train, RE_train, KL_train = train_epoch(model=model,
-                                                     loader=loader_train,
-                                                     optimizer=optimizer,
-                                                     epoch=epoch,
-                                                     beta=beta,
-                                                     device=device,
-                                                     rec_img_path=rec_img_path,
-                                                     writer=writer)
+        loss_train, RE_train, KL_train = train_epoch(model=model, epoch=epoch, loader=loader_train, optimizer=optimizer,
+                                                     beta=beta, rec_img_path=rec_img_path, writer=writer, device=device)
 
-        loss_val, RE_val, KL_val = validation_epoch(model=model,
-                                                    beta=beta,
-                                                    loader=loader_validation,
-                                                    device=device)
+        loss_val, RE_val, KL_val = validation_epoch(model=model, beta=beta, loader=loader_validation, device=device)
 
         print(f'epoch: {epoch}/{epochs}\n'
               f'beta: {beta}\n'
@@ -155,13 +133,20 @@ def train_on_dataset(model,
             writer.add_scalar(tag='KL/train', scalar_value=KL_train, global_step=epoch)
             writer.add_scalar(tag='KL/val', scalar_value=KL_val, global_step=epoch)
 
-
-        # Early stopping
+        # Early stopping and checkpointing best model
 
         if loss_val < best_loss:
 
             early_stopping_strikes = 0
             best_loss = loss_val
+
+            if warmup is None or epoch > warmup:
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': loss_train,
+                }, output_dir / 'best.tar')
 
         elif warmup is not None and epoch > warmup:
 

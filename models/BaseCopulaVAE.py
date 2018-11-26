@@ -12,13 +12,14 @@ class BaseCopulaVAE(BaseVAE):
                  dimension_latent_space,
                  input_shape,
                  dataset_type,
-                 encoder_output_size=300,
                  device=torch.device("cpu")):
 
         super(BaseCopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
                                             input_shape=input_shape,
                                             dataset_type=dataset_type,
                                             device=device)
+
+        self.number_neurons_L = dimension_latent_space * (dimension_latent_space + 1) // 2
 
     def forward(self, x):
 
@@ -117,3 +118,27 @@ class BaseCopulaVAE(BaseVAE):
         x_reconstructed, _, _, = self.forward(x)
 
         return x_reconstructed
+
+
+class BaseDiagonalCopulaVAE(BaseCopulaVAE):
+
+    def __init__(self,
+                 dimension_latent_space,
+                 input_shape,
+                 dataset_type,
+                 device=torch.device("cpu")):
+
+        super(BaseDiagonalCopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
+                                                    input_shape=input_shape,
+                                                    dataset_type=dataset_type,
+                                                    device=device)
+
+        self.number_neurons_L = dimension_latent_space
+
+    def compute_L_x(self, x, batch_size):
+
+        idx_diag = np.diag_indices(self.dimension_latent_space)
+        L_x = torch.zeros([batch_size, self.dimension_latent_space, self.dimension_latent_space]).to(self.device)
+        L_x[:, idx_diag[0], idx_diag[1]] = torch.sigmoid(self.L_layers(x)) + 1e-7
+
+        return L_x

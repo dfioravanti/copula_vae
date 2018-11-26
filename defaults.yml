@@ -37,7 +37,7 @@ experiment:
   latent_size: 50
 
   # Type of VAE to use
-  # Possible options: standard, copula, copulaV2
+  # Possible options: standard, copula, diagonal, copulaV2
   type_vae: standard
 
   # Type of architecture ot be used.

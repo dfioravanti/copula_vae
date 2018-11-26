@@ -12,7 +12,7 @@ output:
   verbose: yes
 
   # Redirects stdout to file output.txt
-  to_file: yes
+  to_file: no
 
 optimization:
 
@@ -20,7 +20,7 @@ optimization:
   batch_size: 100
 
   # Number of epochs for training
-  epochs: 2000
+  epochs: 10
 
   # learning rate
   lr: 0.0003
@@ -37,8 +37,8 @@ experiment:
   latent_size: 50
 
   # Type of VAE to use
-  # Possible options: standard, copula, copulaV2
-  type_vae: standard
+  # Possible options: standard, copula, diagonal, copulaV2
+  type_vae: diagonal
 
   # Type of architecture ot be used.
   # Possible options: shallow, deep, conv

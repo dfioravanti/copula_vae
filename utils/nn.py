@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.nn import Parameter
 import torch.nn.functional as F
 
-from utils.inverse_distibutions import gaussian_icdf, laplace_icdf, cauchy_icdf, exp_icdf
+from utils.inverse_distibutions import gaussian_icdf, laplace_icdf, cauchy_icdf, exp_icdf, logNorm_icdf
 
 
 class Flatten(nn.Module):
@@ -59,16 +59,15 @@ class ICDF(nn.Module):
     def forward(self, x):
 
         if self.distribution == 'gaussian':
-            return gaussian_icdf(value=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
+            return gaussian_icdf(p=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
         elif self.distribution == 'laplace':
-            return laplace_icdf(value=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
+            return laplace_icdf(p=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
         elif self.distribution == 'log_norm':
-            x = torch.clamp(x, min=1e-7, max=1)
-            return gaussian_icdf(value=torch.log(x), loc=self.loc, scale=torch.exp(self.scale))
+            return logNorm_icdf(p=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
         elif self.distribution == 'cauchy':
-            return cauchy_icdf(value=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
+            return cauchy_icdf(p=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
         elif self.distribution == 'exp':
-            return exp_icdf(value=x, rate=torch.log(torch.exp(self.scale) + 1))
+            return exp_icdf(p=x, rate=torch.log(torch.exp(self.scale) + 1))
 
 
 class GatedDense(nn.Module):

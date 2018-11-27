@@ -4,7 +4,7 @@ from scipy.stats import levy_stable
 from scipy import stats
 
 import torch
-from utils.inverse_distibutions import gaussian_0_I_cdf
+from utils.inverse_distibutions import standard_normal_cdf
 
 
 def partition(number, classes):
@@ -82,7 +82,7 @@ def sampling_from_gausiann_copula(L, batch_size, n):
 
     xs = (es @ L).view(batch_size, -1)
 
-    return gaussian_0_I_cdf(xs)
+    return standard_normal_cdf(xs)
 
 
 if __name__ == '__main__':

@@ -42,20 +42,13 @@ class BaseVAE(nn.Module):
     def forward(self, x):
         return
 
-    @abc.abstractmethod
-    def get_encoder_layers(self):
-        return
-
-    @abc.abstractmethod
-    def get_decoder_layers(self):
-        return
-
     def calculate_likelihood(self, loader, number_samples, writer=None):
 
         size_dataset = len(loader.dataset)
         batch_size = loader.batch_size
 
-        losses = np.zeros((size_dataset, number_samples))
+        losses = np.zeros((batch_size, number_samples))
+        likelihood_x = np.zeros(size_dataset)
 
         for i, (xs, _) in enumerate(loader):
 
@@ -66,12 +59,12 @@ class BaseVAE(nn.Module):
             for j in range(number_samples):
 
                 loss, _, _ = self.calculate_loss(xs)
-                losses[i*batch_size:(i+1)*batch_size, j] = loss.cpu().detach().numpy()
+                losses[:, j] = loss.cpu().detach().numpy()
 
             if writer is not None:
                 writer.add_scalar(tag='loss/test', scalar_value=loss, global_step=i)
 
-        likelihood_x = logsumexp(losses, axis=1) - np.log(number_samples)
+            likelihood_x[i*batch_size:(i+1)*batch_size] = logsumexp(losses, axis=1) - np.log(number_samples)
 
         return np.mean(likelihood_x)
 
@@ -89,7 +82,7 @@ if __name__ == '__main__':
     input_shape = (1, 28, 28)
 
     model = VAE(dimension_latent_space=50, input_shape=input_shape, dataset_type=dataset_type)
-    model.load_state_dict(torch.load('../outputs/mnist_bin_standard_50/model', map_location='cpu'))
+    model.load_state_dict(torch.load('../outputs/trained/mnist_bin_standard_50/model', map_location='cpu'))
     model.eval()
 
-    print(model.calculate_likelihood(loader, 200, output_dit))
+    print(model.calculate_likelihood(loader, 100))

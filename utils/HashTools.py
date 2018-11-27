@@ -1,20 +1,12 @@
 """
-This file provides methods for creating hashes, in particular hashes that
-are easy to memorize for humans.
+    This file provides functions for creating hashes, in particular hashes that
+    are easy to memorize for humans.
 """
-
-# -----------------------------------------------------------------------------
-# IMPORTS
-# -----------------------------------------------------------------------------
 
 import hashlib
 import json
 import os
 
-
-# -----------------------------------------------------------------------------
-# FUNCTION DEFINITIONS
-# -----------------------------------------------------------------------------
 
 def string_to_md5(string):
     """
@@ -27,9 +19,6 @@ def string_to_md5(string):
     """
 
     return hashlib.md5(string.encode('UTF-8')).hexdigest()
-
-
-# -----------------------------------------------------------------------------
 
 
 def file_to_md5(file_path):
@@ -48,9 +37,6 @@ def file_to_md5(file_path):
         hasher.update(buf)
 
     return hasher.hexdigest()
-
-
-# -----------------------------------------------------------------------------
 
 
 def mnemonify_hash(hash_string):
@@ -87,9 +73,6 @@ def mnemonify_hash(hash_string):
     return '-'.join([adverb, adjective, animal])
 
 
-# -----------------------------------------------------------------------------
-
-
 def compute_sha1(path, buf_size=65536):
     """
     Takes a path and compute the hash of that file.
@@ -121,9 +104,6 @@ def compute_sha1(path, buf_size=65536):
             sha1.update(data)
 
     return sha1.hexdigest()
-
-
-# -----------------------------------------------------------------------------
 
 
 def exists_and_correct_sha1(path, hash):

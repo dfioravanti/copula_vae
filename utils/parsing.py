@@ -1,3 +1,7 @@
+"""
+    This file provides functions needed to parse the configurations and initialise the experiment
+"""
+
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -14,7 +18,16 @@ from models.VAE import VAE
 from utils.HashTools import mnemonify_hash, string_to_md5
 
 
-def get_args():
+def get_args_and_setting_up():
+    """
+    Load the arguments from the config files, sets up the directory structure
+    and saves the configuration for future use.
+
+    Returns
+    -------
+    SimpleNamespace
+        A namespace containing all the selected options.
+    """
     main_path = Path(sys.argv[0]).parent
     args = parse_config(main_path)
 
@@ -22,6 +35,7 @@ def get_args():
     mnemonic_name_arguments = mnemonify_hash(string_to_md5(args_as_yaml))
 
     # Change some args to be more useful
+
     args.cuda = args.cuda and torch.cuda.is_available()
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if args.warmup == 0:
@@ -60,17 +74,32 @@ def get_args():
     return args
 
 
-def parse_config(main_dir):
+def parse_config(path):
+    """
+    Loads the default configuration and, if needed, it overwrites
+    them with the one defined for the single experiment.
+
+    Parameters
+    ----------
+    path: Path
+        Path to the directory containing the configuration files
+
+    Returns
+    -------
+    SimpleNamespace
+        A namespace containing all the selected options.
+    """
+
     cfg = SimpleNamespace()
 
-    with open(main_dir / 'defaults.yml', 'r') as f:
+    with open(path / 'defaults.yml', 'r') as f:
         defaults = yaml.load(f)
 
     for _, section in defaults.items():
         for arg, value in section.items():
             cfg.__setattr__(arg, value)
 
-    experiment_config_path = main_dir / 'experiment.yml'
+    experiment_config_path = path / 'experiment.yml'
     if experiment_config_path.is_file():
 
         with open(experiment_config_path, 'r') as f:
@@ -84,6 +113,28 @@ def parse_config(main_dir):
 
 
 def get_model(args, input_shape, dataset_type, output_dir=None):
+    """
+    Selects and initialise a pytorch model based on the selected arguments.
+    Raises a NotImplementedError if the required model is not available.
+
+    Parameters
+    ----------
+    args: SimpleNamespace
+        Namespace containing the arguments of the experiment
+    input_shape: tuple of int
+        Shape of the input WITHOUT batch size
+    dataset_type: str
+        Which type of dataset are we using, e.i. binary or continuous
+    output_dir: Path
+        path to the output directory
+
+    Returns
+    -------
+    nn.Module:
+        The selected model correctly initialised
+
+    """
+
     model = None
 
     if args.type_vae == 'standard':

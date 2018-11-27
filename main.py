@@ -7,7 +7,7 @@ from tensorboardX import SummaryWriter
 from torch.optim import Adam
 
 from loaders.load_funtions import load_dataset
-from utils.parsing import get_args, get_model
+from utils.parsing import get_args_and_setting_up, get_model
 from utils.training import train_on_dataset
 
 
@@ -26,7 +26,6 @@ def main(args):
                       input_shape=input_shape,
                       dataset_type=dataset_type,
                       output_dir=args.output_dir)
-
     optimizer = Adam(model.parameters(), lr=args.lr)
 
     model = train_on_dataset(model=model, loader_train=train_loader, loader_validation=validation_loader,
@@ -39,8 +38,7 @@ def main(args):
 
     results_test = model.calculate_likelihood(test_loader,
                                               number_samples=args.S,
-                                              writer=writer
-                                              )
+                                              writer=writer)
 
     if writer is not None:
         writer.add_scalar('test/NLL', results_test)
@@ -50,13 +48,20 @@ def main(args):
 
 if __name__ == '__main__':
 
-    args = get_args()
+    # Parse the config file
+
+    args = get_args_and_setting_up()
+
+    # Set random seed
 
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
+
+    # Decide if to redirect stdout to file or not
+    # needed if printing on terminal is not available
 
     if args.to_file:
         with open(args.output_dir / 'output.txt', 'w', buffering=1) as f:

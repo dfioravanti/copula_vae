@@ -52,7 +52,7 @@ def gaussian_0_I_cdf(values):
 def laplace_icdf(value, loc, scale):
 
     term = value - 0.5
-    return loc - scale * term.sign() * torch.log1p(1-2 * term.abs())
+    return loc - scale * term.sign() * torch.log1p(-2 * term.abs())
 
 
 def cauchy_icdf(value, loc, scale):

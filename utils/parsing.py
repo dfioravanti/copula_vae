@@ -58,6 +58,9 @@ def get_args_and_setting_up():
 
     experiment_description = f'{experiment_description}_{args.latent_size}'
 
+    if args.extra_text:
+        experiment_description = f'{experiment_description}_{args.extra_text}'
+
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
     args.output_dir = Path(args.output_dir) / experiment_description / mnemonic_name_arguments / current_time
     args.log_dir = args.output_dir / 'logs'

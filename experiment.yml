@@ -5,6 +5,9 @@ output:
   # Path for the main output directory
   output_dir: ./outputs
 
+  # Add extra text to the output folder. No deactivates it
+  extra_text: no
+
   # Enable logging with tensorboard
   tensorbord: yes
 
@@ -20,7 +23,7 @@ optimization:
   batch_size: 100
 
   # Number of epochs for training
-  epochs: 10
+  epochs: 2000
 
   # learning rate
   lr: 0.0003
@@ -38,7 +41,7 @@ experiment:
 
   # Type of VAE to use
   # Possible options: standard, copula, diagonal, copulaV2
-  type_vae: diagonal
+  type_vae: copula
 
   # Type of architecture ot be used.
   # Possible options: shallow, deep, conv
@@ -49,7 +52,7 @@ experiment:
   marginals: gaussian
 
   # Number of samples used for approximating the log-likelihood
-  S: 5000
+  S: 5
 
 dataset:
 

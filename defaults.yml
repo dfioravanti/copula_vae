@@ -5,6 +5,9 @@ output:
   # Path for the main output directory
   output_dir: ./outputs
 
+  # Add extra text to the output folder. No deactivates it
+  extra_text: no
+
   # Enable logging with tensorboard
   tensorbord: yes
 

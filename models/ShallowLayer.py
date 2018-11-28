@@ -134,7 +134,6 @@ class ShallowDiagonalMarginalVAE(BaseDiagonalCopulaVAE):
                  dimension_latent_space,
                  input_shape,
                  dataset_type,
-                 encoder_output_size=300,
                  marginals='gaussian',
                  device=torch.device("cpu")):
 
@@ -146,14 +145,14 @@ class ShallowDiagonalMarginalVAE(BaseDiagonalCopulaVAE):
         self.marginals = marginals
 
         # Encoder q(s | x)
-        # L(x) without the final activation function
 
         self.L_layers = nn.Sequential(
             nn.Linear(np.prod(self.input_shape), 300),
             nn.Tanh(),
             nn.Linear(300, 300),
             nn.Tanh(),
-            nn.Linear(300, self.number_neurons_L)
+            nn.Linear(300, self.number_neurons_L),
+            nn.Sigmoid()
         )
 
         # Decoder p(x|s)

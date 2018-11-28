@@ -1,9 +1,7 @@
 import math
 
 import torch
-
-# We need this to avoid numerical instability
-tollerance = 1e-7
+from utils.settings import tollerance
 
 
 def gaussian_cdf(means, sigmas, values):

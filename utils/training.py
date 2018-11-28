@@ -23,10 +23,6 @@ def train_epoch(model, epoch, loader, optimizer, beta, rec_img_path=None, writer
 
         optimizer.zero_grad()
 
-        # TODO: move reshape inside the model.
-        #       So if for some reason I decide to start with CNN it still works.
-        #       Inputs and outputs should always be  of the original shape
-
         xs = xs.view(loader.batch_size, -1).to(device)
 
         if batch_idx == 0 and writer is not None:
@@ -81,17 +77,14 @@ def validation_epoch(model, beta, loader, device=torch.device("cpu")):
 
 
 def compute_beta(epoch, warmup):
-    if warmup is None:
-        beta = 1
-    else:
-        beta = min(epoch / warmup, 1)
 
-    return beta
+    return min(epoch / warmup, 1) if warmup is not None else 1
 
 
 def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=50, warmup=None, grace_early_stopping=10,
                      checkpoint=None, output_dir=None, frequency_checkpoints=None, checkpoint_dir=None, writer=None,
                      device=torch.device("cpu")):
+    # Initialization
     best_loss = math.inf
     early_stopping_strikes = 0
     starting_epoch = 0
@@ -101,11 +94,10 @@ def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=5
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         starting_epoch = checkpoint['epoch']
 
-    model.train()
-
     rec_img_path = output_dir / 'rec_img'
     rec_img_path.mkdir(parents=True, exist_ok=True)
 
+    # Main loop
     for epoch in range(starting_epoch, epochs):
 
         beta = compute_beta(epoch, warmup)

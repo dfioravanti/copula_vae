@@ -6,10 +6,7 @@ import math
 
 import torch
 
-from utils.distributions import tollerance
-
-# We need this to avoid numerical instability
-tollerance = 1e-7
+from utils.settings import tollerance
 
 
 # CDF
@@ -53,7 +50,7 @@ def standard_normal_icdf(p):
     return torch.erfinv(2 * p - 1) * math.sqrt(2)
 
 
-def gaussian_icdf(p, loc, scale):
+def normal_icdf(p, loc=0, scale=1):
     """
     Compute the inverse cdf of a gaussian with mean as loc and variance as scale.
 

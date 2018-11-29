@@ -14,7 +14,7 @@ import yaml
 from models.ConvLayer import ConvMarginalVAE, ConvDiagonalMarginalVAE
 from models.DeepLayer import DeepMarginalVAE, DeepDiagonalMarginalVAE
 from models.ShallowLayer import ShallowCopulaVAE, ShallowMarginalVAE, ShallowDiagonalMarginalVAE
-from models.VAE import VAE
+from models.VAE import VAE, DeepVAE
 from utils.HashTools import mnemonify_hash, string_to_md5
 
 
@@ -145,9 +145,14 @@ def get_model(args, input_shape, dataset_type, output_dir=None):
         if args.architecture == 'shallow':
             model = VAE(dimension_latent_space=args.latent_size,
                         input_shape=input_shape,
-                        encoder_output_size=300,
                         dataset_type=dataset_type,
                         device=args.device)
+
+        elif args.architecture == 'deep':
+            model = DeepVAE(dimension_latent_space=args.latent_size,
+                            input_shape=input_shape,
+                            dataset_type=dataset_type,
+                            device=args.device)
 
     elif args.type_vae == 'copula':
 

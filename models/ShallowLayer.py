@@ -6,8 +6,6 @@ from torch import nn
 from models.BaseCopulaVAE import BaseCopulaVAE, BaseDiagonalCopulaVAE
 from utils.nn import ICDF
 
-from utils.inverse_distibutions import normal_icdf
-
 
 class ShallowMarginalVAE(BaseCopulaVAE):
 
@@ -40,15 +38,7 @@ class ShallowMarginalVAE(BaseCopulaVAE):
 
         # F(z)
 
-        # self.F = ICDF(self.dimension_latent_space, marginals=self.marginals)
-
-        self.mu_z = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, 300),
-            nn.Tanh(),
-            nn.Linear(300, 300),
-            nn.Tanh(),
-            nn.Linear(300, self.dimension_latent_space),
-        )
+        self.F = ICDF(self.dimension_latent_space, marginals=self.marginals)
 
         self.p_x_layers = nn.Sequential(
             nn.Linear(self.dimension_latent_space, 300),
@@ -73,7 +63,7 @@ class ShallowMarginalVAE(BaseCopulaVAE):
 
     def p_z(self, s):
 
-        return normal_icdf(p=s, loc=self.mu_z(s), scale=1)
+        return self.F(s)
 
 
 class ShallowCopulaVAE(BaseCopulaVAE):
@@ -169,15 +159,7 @@ class ShallowDiagonalMarginalVAE(BaseDiagonalCopulaVAE):
 
         # F(z)
 
-        # self.F = ICDF(self.dimension_latent_space, marginals=self.marginals)
-
-        self.mu_z = nn.Sequential(
-            nn.Linear(self.dimension_latent_space, 300),
-            nn.Tanh(),
-            nn.Linear(300, 300),
-            nn.Tanh(),
-            nn.Linear(300, self.dimension_latent_space),
-        )
+        self.F = ICDF(self.dimension_latent_space, marginals=self.marginals)
 
         self.p_x_layers = nn.Sequential(
             nn.Linear(self.dimension_latent_space, 300),
@@ -202,4 +184,4 @@ class ShallowDiagonalMarginalVAE(BaseDiagonalCopulaVAE):
 
     def p_z(self, s):
 
-        return normal_icdf(p=s, loc=self.mu_z(s), scale=1)
+        return self.F(s)

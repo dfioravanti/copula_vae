@@ -52,7 +52,7 @@ experiment:
   marginals: gaussian
 
   # Number of samples used for approximating the log-likelihood
-  S: 5
+  samples_ll: 5
 
 dataset:
 

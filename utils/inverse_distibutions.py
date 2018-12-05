@@ -13,7 +13,7 @@ from utils.settings import tollerance
 
 def standard_normal_cdf(value):
     """
-    Compute the cdf of a gaussian with 0 mean and I covariance matrix
+    Compute the componentwise cdf of a gaussian with 0 mean and I covariance matrix
 
     Parameters
     ----------
@@ -32,7 +32,7 @@ def standard_normal_cdf(value):
 
 def standard_normal_icdf(p):
     """
-    Compute the inverse cdf of a gaussian with 0 mean and I covariance matrix.
+    Compute the componentwise inverse cdf of a gaussian with 0 mean and I covariance matrix.
     The clamp is there to avoid numerical instability
 
     Parameters
@@ -52,7 +52,7 @@ def standard_normal_icdf(p):
 
 def normal_icdf(p, loc=0, scale=1):
     """
-    Compute the inverse cdf of a gaussian with mean as loc and variance as scale.
+    Compute the componentwise inverse cdf of a gaussian with mean as loc and variance as scale.
 
     Parameters
     ----------
@@ -73,7 +73,7 @@ def normal_icdf(p, loc=0, scale=1):
 
 def logNorm_icdf(p, loc, scale):
     """
-    Compute the inverse cdf of a logNormal with mean as loc and variance as scale.
+    Compute the componentwise inverse cdf of a logNormal with mean as loc and variance as scale.
 
     Parameters
     ----------
@@ -94,7 +94,7 @@ def logNorm_icdf(p, loc, scale):
 
 def laplace_icdf(p, loc, scale):
     """
-        Compute the inverse cdf of a laplace with mean as loc and b as scale.
+        Compute the componentwise inverse cdf of a laplace with mean as loc and b as scale.
 
         Parameters
         ----------
@@ -116,7 +116,7 @@ def laplace_icdf(p, loc, scale):
 
 def cauchy_icdf(p, loc, scale):
     """
-        Compute the inverse cdf of a cauchy with mean as loc and variance as scale.
+        Compute the componentwise inverse cdf of a cauchy with mean as loc and variance as scale.
 
         Parameters
         ----------
@@ -137,7 +137,7 @@ def cauchy_icdf(p, loc, scale):
 
 def exp_icdf(p, rate):
     """
-        Compute the inverse cdf of a exponential with mean as loc and b as scale.
+        Compute the componentwise inverse cdf of a exponential with mean as loc and b as scale.
 
         Parameters
         ----------

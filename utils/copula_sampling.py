@@ -74,7 +74,7 @@ def sampling_from_gumbel_partially_nested_copula(d, s, thetas):
     return psi_0(-np.log(xs) / v_0)
 
 
-def sampling_from_gausiann_copula(L, d, n=1):
+def sampling_from_gaussian_copula(L, d, n=1):
     """
     Samples (n, d) elements from a gaussian copula with correlation matrix R = LL^t
 
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     print(L @ L.T)
     L = torch.tensor(L).float()
 
-    xs = sampling_from_gausiann_copula(L, d, n)
+    xs = sampling_from_gaussian_copula(L, d, n)
     zs = normal_icdf(xs)
 
     fig = plt.figure()

@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from models.BaseVAE import BaseVAE
-from utils.copula_sampling import sampling_from_gausiann_copula
+from utils.copula_sampling import sampling_from_gaussian_copula
 from utils.distributions import log_density_bernoulli, log_density_discretized_Logistic
 from utils.settings import tollerance
 
@@ -38,7 +38,7 @@ class BaseCopulaVAE(BaseVAE):
         batch_size = x.shape[0]
         L_x = self.compute_L_x(x, batch_size)
 
-        s = sampling_from_gausiann_copula(L_x, self.dimension_latent_space, batch_size)
+        s = sampling_from_gaussian_copula(L_x, self.dimension_latent_space, batch_size)
 
         return s, L_x
 

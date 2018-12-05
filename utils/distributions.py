@@ -1,7 +1,10 @@
 import math
 
 import torch
+
 from utils.settings import tollerance
+from utils.inverse_distibutions import standard_normal_icdf
+from utils.operations import batch_inverse, batch_eye_like
 
 
 def gaussian_cdf(means, sigmas, values):
@@ -32,6 +35,35 @@ def log_normal_standard(x, average=False):
 
 
 # Density functions
+
+def log_density_gaussian_copula(xs, R_inv):
+    """
+    Computes the logarithm of the density function of a gaussian copula
+    with correlation matrix R. Without the additive constant!
+
+    See https://en.wikipedia.org/wiki/Copula_(probability_theory)#Gaussian_copula for the formula
+
+    Parameters
+    ----------
+    xs: Tensor
+        Input values
+    R_inv: Tensor
+        The inverse of correlation matrix R
+
+    Returns
+    -------
+    Tensor:
+        The log density without the additive constant
+
+    """
+
+    eye = batch_eye_like(xs)
+    R_inv = batch_inverse(R_inv)
+    R_inv = R_inv.t() @ R_inv
+
+    icdf_gaussian_xs = standard_normal_icdf(xs)
+
+    return -0.5 * icdf_gaussian_xs.t() @ (R_inv - eye) @ icdf_gaussian_xs
 
 
 def log_density_Normal(x, mean, log_var, average=False, reduce_dim=None):
@@ -110,3 +142,26 @@ def log_density_discretized_Logistic(x, mean, logvar, bin_size=1 / 256, average=
             return torch.sum(log_logist_256, reduce_dim)
     else:
         return log_logist_256
+
+
+def kl_normal_and_standard_normal(means, log_vars):
+
+    """
+    Compute the KL between two X = N(means, exp(log_vars)I) and Z = N(0, I)
+    the formula used can be found at page 41 of Kingma "Variational inference & deep learning".
+
+    Parameters
+    ----------
+    means: Tensors
+        (batch_size, n) numbers representing the mean of the component i of the gaussian X
+    log_vars: Tensor
+        (batch_size, n) numbers representing the log variance of the component i of the gaussian X
+    Returns
+    -------
+        Tensor:
+        batch_size numbers representing KL(X, Z)
+    """
+
+    kl = -0.5 * (1 + 2 * log_vars - means**2 - torch.exp(log_vars)**2)
+
+    return torch.sum(kl, dim=1)

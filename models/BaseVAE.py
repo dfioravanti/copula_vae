@@ -1,4 +1,3 @@
-
 import abc
 
 import numpy as np
@@ -9,7 +8,6 @@ import torch.nn as nn
 
 
 class BaseVAE(nn.Module):
-
     __metaclass__ = abc.ABCMeta
 
     def __init__(self,
@@ -29,7 +27,6 @@ class BaseVAE(nn.Module):
 
         self.dataset_type = dataset_type
 
-
     @abc.abstractmethod
     def calculate_loss(self, x, beta=1, average=True):
         return None, None, None
@@ -41,6 +38,15 @@ class BaseVAE(nn.Module):
     @abc.abstractmethod
     def forward(self, x):
         return
+
+    def get_reconstruction(self, x):
+
+        x_reconstructed, _, _, _, _, = self.forward(x)
+
+    def get_latent_code(self, x):
+
+        z_x_mean, z_x_log_var = self.q_z(x)
+        return self.sampling_from_normal(z_x_mean, z_x_log_var)
 
     def calculate_likelihood(self, loader, number_samples, writer=None):
 
@@ -57,20 +63,18 @@ class BaseVAE(nn.Module):
             print(f'Computing likelihood for batch number {i}\n')
 
             for j in range(number_samples):
-
                 loss, _, _ = self.calculate_loss(xs)
                 losses[:, j] = loss.cpu().detach().numpy()
 
             if writer is not None:
                 writer.add_scalar(tag='loss/test', scalar_value=loss, global_step=i)
 
-            likelihood_x[i*batch_size:(i+1)*batch_size] = logsumexp(losses, axis=1) - np.log(number_samples)
+            likelihood_x[i * batch_size:(i + 1) * batch_size] = logsumexp(losses, axis=1) - np.log(number_samples)
 
         return np.mean(likelihood_x)
 
 
 if __name__ == '__main__':
-
     from loaders.load_funtions import load_MNIST
     from models.VAE import VAE
 

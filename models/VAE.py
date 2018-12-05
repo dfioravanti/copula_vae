@@ -90,16 +90,6 @@ class VAE(BaseVAE):
 
     # Evaluation
 
-    def get_latent_code(self, x):
-
-        z_x_mean, z_x_log_var = self.q_z(x)
-        return self.sampling_from_normal(z_x_mean, z_x_log_var)
-
-    def get_reconstruction(self, x):
-
-        x_reconstructed, _, _, _, _, = self.forward(x)
-
-        return x_reconstructed
 
     def log_desity_prior(self, z):
 

@@ -9,7 +9,7 @@ output:
   extra_text: no
 
   # Enable logging with tensorboard
-  tensorbord: yes
+  tensorboard: yes
 
   # Enable printing
   verbose: yes

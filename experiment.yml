@@ -9,7 +9,7 @@ output:
   extra_text: no
 
   # Enable logging with tensorboard
-  tensorbord: yes
+  tensorboard: yes
 
   # Enable printing
   verbose: yes
@@ -41,7 +41,7 @@ experiment:
 
   # Type of VAE to use
   # Possible options: standard, copula, diagonal, copulaV2
-  type_vae: copula
+  type_vae: standard
 
   # Type of architecture ot be used.
   # Possible options: shallow, deep, conv
@@ -58,7 +58,7 @@ dataset:
 
   # Name of the database to load
   # Possible options: binary_mnist, mnist, bedrooms, omniglot, cifar10, fashionmnist, dSprites
-  dataset_name: mnist
+  dataset_name: fashionmnist
 
   # Allow dynamic binarization. Ignored if it does not make sense
   dynamic_binarization: yes

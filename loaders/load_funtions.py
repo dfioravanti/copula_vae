@@ -31,8 +31,9 @@ def load_dataset(args):
 
     elif args.dataset_name == 'fashionmnist':
 
-        train_loader, test_loader, validation_loader = load_FashionMNIST(batch_size=args.batch_size,
-                                                                         shuffle=args.shuffle)
+        train_loader, test_loader, validation_loader, dataset_type = load_FashionMNIST(batch_size=args.batch_size,
+                                                                                       dynamic_binarization=args.dynamic_binarization,
+                                                                                       shuffle=args.shuffle)
         input_shape = (1, 28, 28)
 
     elif args.dataset_name == 'omniglot':
@@ -222,7 +223,8 @@ def load_MNIST(root_dir=None, dynamic_binarization=True,
     return train_loader, test_loader, valid_loader, dataset_type
 
 
-def load_FashionMNIST(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
+def load_FashionMNIST(root_dir=None, dynamic_binarization=True, batch_size=20,
+                      shuffle=True, transform=None, download=True):
     if root_dir is None:
         root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets/Fashion'
 
@@ -232,8 +234,23 @@ def load_FashionMNIST(root_dir=None, batch_size=20, shuffle=True, transform=None
     train_dataset = datasets.FashionMNIST(root_dir, train=True, download=download,
                                           transform=transform)
 
-    valid_dataset = datasets.FashionMNIST(root_dir, train=True, download=download,
-                                          transform=transform)
+    test_dataset = datasets.FashionMNIST(root_dir, train=False, download=download,
+                                         transform=transform)
+
+    if dynamic_binarization:
+        dataset_type = "binary"
+        train_data = torch.from_numpy(np.random.binomial(1, train_dataset.train_data.numpy() / 255))
+        test_data = torch.from_numpy(np.random.binomial(1, test_dataset.test_data.numpy() / 255))
+    else:
+        dataset_type = "continuous"
+        train_data = torch.from_numpy(train_dataset.train_data.numpy() / 255)
+        test_data = torch.from_numpy(test_dataset.test_data.numpy() / 255)
+
+    train_labels = train_dataset.train_labels
+    test_labels = test_dataset.test_labels
+
+    train_dataset = data_utils.TensorDataset(train_data.float(), train_labels)
+    test_dataset = data_utils.TensorDataset(test_data.float(), test_labels)
 
     size_train = len(train_dataset)
     indices = list(range(size_train))
@@ -243,25 +260,22 @@ def load_FashionMNIST(root_dir=None, batch_size=20, shuffle=True, transform=None
         np.random.shuffle(indices)
 
     train_idx, valid_idx = indices[split:], indices[:split]
-    train_sampler = data_utils.SubsetRandomSampler(train_idx)
-    valid_sampler = data_utils.SubsetRandomSampler(valid_idx)
+    train_sampler = SubsetSampler(train_idx)
+    valid_sampler = SubsetSampler(valid_idx)
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, sampler=train_sampler, shuffle=shuffle
+        train_dataset, batch_size=batch_size, sampler=train_sampler, shuffle=False,
     )
 
     valid_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=batch_size, sampler=valid_sampler, shuffle=shuffle
+        train_dataset, batch_size=batch_size, sampler=valid_sampler, shuffle=False
     )
 
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(root_dir, train=False, transform=transforms.Compose([
-            transforms.ToTensor(),
-            transform
-        ])),
-        batch_size=batch_size, shuffle=shuffle)
+        test_dataset, batch_size=batch_size, shuffle=shuffle
+    )
 
-    return train_loader, test_loader, valid_loader
+    return train_loader, test_loader, valid_loader, dataset_type
 
 
 def load_bedrooms(root_dir=None, batch_size=20, shuffle=True, transform=None):

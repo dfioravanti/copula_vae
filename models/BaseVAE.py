@@ -43,6 +43,8 @@ class BaseVAE(nn.Module):
 
         x_reconstructed, _, _, _, _, = self.forward(x)
 
+        return x_reconstructed
+
     def get_latent_code(self, x):
 
         z_x_mean, z_x_log_var = self.q_z(x)

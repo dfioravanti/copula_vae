@@ -1,10 +1,9 @@
-from models.BaseVAE import BaseVAE
-
 import numpy as np
 import torch
 from torch import nn
-from utils.distributions import log_density_bernoulli, log_density_discretized_Logistic, \
-    log_density_Normal, log_density_standard_Normal
+
+from models.BaseVAE import BaseVAE
+from utils.distributions import log_density_bernoulli, log_density_Normal, log_density_standard_Normal
 
 
 class VAE(BaseVAE):
@@ -50,7 +49,10 @@ class VAE(BaseVAE):
         )
 
         if not dataset_type == 'binary':
-            self.p_x_log_var = nn.Linear(300, np.prod(self.input_shape))
+            self.p_x_log_var = nn.Sequential(
+                nn.Linear(300, np.prod(self.input_shape)),
+                nn.Hardtanh(min_val=-4.5, max_val=0)
+            )
 
         # weights initialization
         for m in self.modules():
@@ -90,7 +92,6 @@ class VAE(BaseVAE):
 
     # Evaluation
 
-
     def log_desity_prior(self, z):
 
         return log_density_standard_Normal(z, reduce_dim=1)
@@ -117,7 +118,7 @@ class VAE(BaseVAE):
         if self.dataset_type == 'binary':
             RE = log_density_bernoulli(x, x_mean, reduce_dim=1)
         elif self.dataset_type == 'gray' or self.dataset_type == 'continuous':
-            RE = - log_density_discretized_Logistic(x, x_mean, x_log_var, reduce_dim=1)
+            RE = - self.L2(x, x_mean)
 
         log_p_z = self.log_desity_prior(z_x)
         log_q_z = log_density_Normal(z_x, z_x_mean, z_x_log_var, reduce_dim=1)

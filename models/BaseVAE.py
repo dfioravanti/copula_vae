@@ -21,6 +21,7 @@ class BaseVAE(nn.Module):
         self.dimension_latent_space = dimension_latent_space
         self.input_shape = input_shape
         self.device = device
+        self.L2 = nn.MSELoss()
 
         if dataset_type not in ['continuous', 'gray', 'binary']:
             raise ValueError(f'We do not support {dataset_type} as dataset_type!')

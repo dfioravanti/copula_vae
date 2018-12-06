@@ -69,19 +69,21 @@ class NewCopulaVAE(BaseVAE):
     # Model execution
 
     def forward(self, x):
-        batch_size = x.shape[0]
 
-        L_x, z_x_mean, z_x_log_var = self.q_z(x)
-        z_x = sampling_from_gaussian_copula(L=L_x, d=self.dimension_latent_space, n=batch_size)
-        z_x = normal_icdf(z_x, loc=z_x_mean, scale=z_x_log_var)
+        z_x, L_x, z_x_mean, z_x_log_var = self.q_z(x)
         x_mean, x_logvar = self.p_x(z_x)
 
         return x_mean, x_logvar, z_x, L_x, z_x_mean, z_x_log_var
 
     def q_z(self, x):
 
+        batch_size = x.shape[0]
         x = self.q_z_layers(x)
-        return self.compute_L_x(x), self.mean(x), self.log_var(x)
+        L_x, z_x_mean, z_x_log_var = self.L_x(x), self.mean(x), self.log_var(x)
+        z_x = sampling_from_gaussian_copula(L=L_x, d=self.dimension_latent_space, n=batch_size)
+        z_x = normal_icdf(z_x, loc=z_x_mean, scale=z_x_log_var)
+
+        return z_x, L_x, z_x_mean, z_x_log_var
 
     def p_x(self, z):
         z = self.p_x_layers(z)
@@ -91,17 +93,23 @@ class NewCopulaVAE(BaseVAE):
         else:
             return self.p_x_mean(z), self.p_x_log_var(z)
 
-    def compute_L_x(self, x):
+    def L_x(self, x):
 
         batch_size = x.shape[0]
 
         idx_diag = np.diag_indices(self.dimension_latent_space)
         L_x = torch.zeros([batch_size, self.dimension_latent_space, self.dimension_latent_space]).to(self.device)
         L_x[:, idx_diag[0], idx_diag[1]] = torch.sigmoid(self.L_layers(x)) + tollerance
+        L_x[:, idx_diag[0], idx_diag[1]] = 1
 
         return L_x
 
     # Evaluation
+
+    def get_L_x(self, x):
+
+        _, L, _, _ = self.q_z(x)
+        return L
 
     def get_reconstruction(self, x):
 
@@ -135,7 +143,7 @@ class NewCopulaVAE(BaseVAE):
         if self.dataset_type == 'binary':
             RE = log_density_bernoulli(x, x_mean, reduce_dim=1)
         elif self.dataset_type == 'gray' or self.dataset_type == 'continuous':
-            RE = - log_density_discretized_Logistic(x, x_mean, x_log_var, reduce_dim=1)
+            RE = - self.L2(x, x_mean)
 
         KL_copula = self.compute_KL_copula(L_x)
         KL_marginal = kl_normal_and_standard_normal(z_x_mean, z_x_log_var)
@@ -164,7 +172,5 @@ class NewCopulaVAE(BaseVAE):
     def compute_KL_marginals(self, z, means, log_vars):
 
         log_p_z = log_density_standard_Normal(z, reduce_dim=1)
-        print(f'prior: {torch.mean(log_p_z)}')
         log_q_z = log_density_Normal(z, means, log_vars, reduce_dim=1)
-        print(f'posterior: {torch.mean(log_q_z)}')
         return log_q_z - log_p_z

@@ -38,14 +38,14 @@ def load_dataset(args):
 
     elif args.dataset_name == 'omniglot':
 
-        train_loader, test_loader, validation_loader = load_omniglot(batch_size=args.batch_size,
-                                                                     shuffle=args.shuffle)
+        train_loader, test_loader, validation_loader, dataset_type = load_omniglot(batch_size=args.batch_size,
+                                                                                   shuffle=args.shuffle)
         input_shape = (1, 105, 105)
 
     elif args.dataset_name == 'cifar10':
 
-        train_loader, test_loader, validation_loader = load_cifar10(batch_size=args.batch_size,
-                                                                    shuffle=args.shuffle)
+        train_loader, test_loader, validation_loader, dataset_type = load_cifar10(batch_size=args.batch_size,
+                                                                                  shuffle=args.shuffle)
         input_shape = (3, 32, 32)
 
     elif args.dataset_name == 'bedrooms':
@@ -317,50 +317,69 @@ def load_bedrooms(root_dir=None, batch_size=20, shuffle=True, transform=None):
     return train_loader, test_loader, valid_loader
 
 
-def load_omniglot(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
+def load_omniglot(root_dir=None, batch_size=20,
+                  shuffle=True, transform=None, download=True):
+    dataset_type = "binary"
+
     if root_dir is None:
         root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
-        root_dir = str(root_dir)
+        # root_dir = str(root_dir)
 
     if transform is None:
         transform = transforms.ToTensor()
 
     train_dataset = datasets.Omniglot(root_dir, transform=transform, download=download)
+    test_dataset = datasets.Omniglot(root_dir, transform=transform, download=download, background=False)
+
+    train_data = np.zeros((len(train_dataset), 105, 105))
+    test_data = np.zeros((len(test_dataset), 105, 105))
+
+    for i, (image, _) in enumerate(train_dataset):
+        train_data[i] = image.numpy() / 255
+
+    for i, (image, _) in enumerate(test_dataset):
+        test_data[i] = image.numpy() / 255
+
+    if shuffle:
+        np.random.shuffle(train_data)
+        np.random.shuffle(test_data)
+
+    train_data = torch.from_numpy(train_data)
+    test_data = torch.from_numpy(test_data)
+
+    # no labels
+    train_labels = torch.zeros(train_data.shape)
+    test_labels = torch.zeros(test_data.shape)
+
+    train_dataset = data_utils.TensorDataset(train_data.float(), train_labels)
+    test_dataset = data_utils.TensorDataset(test_data.float(), test_labels)
 
     size_train = len(train_dataset)
     indices = list(range(size_train))
-    split = int(np.floor(0.2 * size_train))
+    val_split = size_train - 1345  # given by god to make the batch size reasonable
 
-    if split % batch_size != 0:
-        raise ValueError(f'The batch size: {batch_size} does not divide the size of '
-                         f'the train_dataset: {size_train - split} or the size of the validation_dataset: {split}')
-
-    if shuffle:
-        np.random.shuffle(indices)
-
-    train_idx, valid_idx = indices[split:], indices[:split]
-    train_sampler = data_utils.SubsetRandomSampler(train_idx)
-    valid_sampler = data_utils.SubsetRandomSampler(valid_idx)
+    train_idx, valid_idx = indices[:val_split], indices[val_split:]
+    train_sampler = SubsetSampler(train_idx)
+    valid_sampler = SubsetSampler(valid_idx)
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, sampler=train_sampler, shuffle=shuffle
+        train_dataset, batch_size=batch_size, sampler=train_sampler, shuffle=False,
     )
 
     valid_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, sampler=valid_sampler, shuffle=shuffle
+        train_dataset, batch_size=batch_size, sampler=valid_sampler, shuffle=False
     )
 
     test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(root_dir, train=False, transform=transforms.Compose([
-            transforms.ToTensor(),
-            transform
-        ])),
-        batch_size=batch_size, shuffle=shuffle)
+        test_dataset, batch_size=batch_size, shuffle=shuffle
+    )
 
-    return train_loader, test_loader, valid_loader
+    return train_loader, test_loader, valid_loader, dataset_type
 
 
 def load_cifar10(root_dir=None, batch_size=20, shuffle=True, transform=None, download=True):
+    dataset_type = "continuous"
+
     if root_dir is None:
         root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
         root_dir = str(root_dir)
@@ -400,16 +419,15 @@ def load_cifar10(root_dir=None, batch_size=20, shuffle=True, transform=None, dow
         ])),
         batch_size=batch_size, shuffle=shuffle)
 
-    return train_loader, test_loader, valid_loader
+    return train_loader, test_loader, valid_loader, dataset_type
 
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    train_loader, test_loader, valid_loader, dataset_type = load_dSprites(root_dir='../datasets/', verbose=True,
-                                                                          batch_size=1)
+    train_loader, test_loader, valid_loader, dataset_type = load_omniglot(root_dir='../datasets/')
     sample = next(iter(train_loader))[0]
     print(sample.shape)
-    sample = sample.reshape((64, 64))
+    sample = sample.reshape((105, 105))
     plt.imshow(sample, cmap='gray')
     plt.show()

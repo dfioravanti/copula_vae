@@ -79,7 +79,9 @@ def log_density_Normal(x, mean, log_var, average=False, reduce_dim=None):
 
     log_densities = -0.5 * (log_var + torch.pow(x - mean, 2) / torch.exp(log_var))
 
-    if average:
+    if reduce_dim is None:
+        return log_densities
+    elif average:
         return torch.mean(log_densities, reduce_dim)
     else:
         return torch.sum(log_densities, reduce_dim)
@@ -96,7 +98,9 @@ def log_density_standard_Normal(x, average=False, reduce_dim=None):
 
     log_densities = -0.5 * torch.pow(x, 2)
 
-    if average:
+    if reduce_dim is None:
+        return log_densities
+    elif average:
         return torch.mean(log_densities, reduce_dim)
     else:
         return torch.sum(log_densities, reduce_dim)
@@ -145,7 +149,6 @@ def log_density_discretized_Logistic(x, mean, logvar, bin_size=1 / 256, average=
 
 
 def kl_normal_and_standard_normal(means, log_vars):
-
     """
     Compute the KL between two X = N(means, exp(log_vars)I) and Z = N(0, I)
     the formula used can be found at page 41 of Kingma "Variational inference & deep learning".
@@ -162,6 +165,6 @@ def kl_normal_and_standard_normal(means, log_vars):
         batch_size numbers representing KL(X, Z)
     """
 
-    kl = -0.5 * (1 + 2 * log_vars - means**2 - torch.exp(log_vars)**2)
+    kl = -0.5 * (1 + 2 * log_vars - means ** 2 - torch.exp(log_vars) ** 2)
 
     return torch.sum(kl, dim=1)

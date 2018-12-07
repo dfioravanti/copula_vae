@@ -121,6 +121,11 @@ class NewCopulaVAE(BaseVAE):
 
         pass
 
+    def p_z(self, n):
+
+        eye = torch.eye(self.dimension_latent_space)
+        return normal_icdf(sampling_from_gaussian_copula(L=eye, d=self.dimension_latent_space, n=n))
+
     def calculate_loss(self, x, beta=1, average=True):
 
         '''
@@ -146,7 +151,7 @@ class NewCopulaVAE(BaseVAE):
             RE = - self.L2(x, x_mean)
 
         KL_copula = self.compute_KL_copula(L_x)
-        KL_marginal = kl_normal_and_standard_normal(z_x_mean, z_x_log_var)
+        KL_marginal = self.compute_KL_marginals(z_x_mean, z_x_log_var)
         KL = torch.mean(KL_copula + KL_marginal)
 
         # We are going to minimise so we need to take -ELBO
@@ -169,8 +174,18 @@ class NewCopulaVAE(BaseVAE):
         tr_log_L = torch.sum(torch.log(diag_L_x), dim=1)
         return (tr_R - d) / 2 - tr_log_L
 
-    def compute_KL_marginals(self, z, means, log_vars):
+    def compute_KL_marginals(self, means, log_vars):
 
-        log_p_z = log_density_standard_Normal(z, reduce_dim=1)
-        log_q_z = log_density_Normal(z, means, log_vars, reduce_dim=1)
-        return log_q_z - log_p_z
+        z = self.sampling_from_normal(means, log_vars)
+
+        log_p_z = log_density_standard_Normal(z)
+        log_q_z = log_density_Normal(z, means, log_vars)
+        lol = torch.sum(log_q_z - log_p_z, dim=1)
+        return lol
+
+    def sampling_from_normal(self, mean, log_variance):
+
+        zero_one_normal = torch.randn(self.dimension_latent_space, dtype=log_variance.dtype).to(self.device)
+        variance = log_variance.exp()
+
+        return zero_one_normal.mul(variance).add(mean)

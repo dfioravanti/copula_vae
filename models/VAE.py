@@ -134,6 +134,10 @@ class VAE(BaseVAE):
 
         return loss, RE, KL
 
+    def p_z(self, n):
+
+        return torch.randn(n, self.dimension_latent_space)
+
 
 class DeepVAE(VAE):
 

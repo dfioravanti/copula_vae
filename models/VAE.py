@@ -29,10 +29,7 @@ class VAE(BaseVAE):
         )
 
         self.mean = nn.Linear(300, self.dimension_latent_space)
-        self.log_var = nn.Sequential(
-            nn.Linear(300, self.dimension_latent_space),
-            nn.Hardtanh(min_val=-6., max_val=2.)
-        )
+        self.log_var = nn.Linear(300, self.dimension_latent_space)
 
         # Decoder p(x|z)
 
@@ -133,7 +130,6 @@ class VAE(BaseVAE):
             KL = torch.mean(KL)
             z_x_mean = torch.mean(z_x_mean)
             z_x_log_var = torch.mean(z_x_log_var)
-
 
         return loss, RE, KL, z_x_mean, z_x_log_var
 

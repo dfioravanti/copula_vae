@@ -38,7 +38,7 @@ class NewCopulaVAE(BaseVAE):
             nn.Linear(300, self.dimension_latent_space),
         )
         self.mean = nn.Linear(300, self.dimension_latent_space)
-        self.log_var = nn.Linear(300, self.dimension_latent_space),
+        self.log_var = nn.Linear(300, self.dimension_latent_space)
 
         # Decoder p(x|z)
 

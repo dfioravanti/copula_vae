@@ -10,9 +10,13 @@ from torchvision.utils import make_grid, save_image
 def train_epoch(model, epoch, loader, optimizer, beta, rec_img_path=None, writer=None, device=torch.device("cpu")):
     model.train()
 
+    batch_size = loader.batch_size
+
     batch_losses = np.zeros(len(loader))
     batch_RE = np.zeros_like(batch_losses)
     batch_KL = np.zeros_like(batch_losses)
+    z_x_mean = np.zeros_like(batch_losses)
+    z_x_log_var = np.zeros_like(batch_losses)
 
     if isinstance(model, nn.DataParallel):
         input_shape = model.module.input_shape
@@ -23,7 +27,7 @@ def train_epoch(model, epoch, loader, optimizer, beta, rec_img_path=None, writer
 
         optimizer.zero_grad()
 
-        xs = xs.view(loader.batch_size, -1).to(device)
+        xs = xs.view(batch_size, -1).to(device)
 
         if batch_idx == 0 and writer is not None:
             recs = model.get_reconstruction(xs)
@@ -38,7 +42,7 @@ def train_epoch(model, epoch, loader, optimizer, beta, rec_img_path=None, writer
                        filename=rec_img_path / f'epoch_{epoch:0=2d}.png',
                        nrow=n)
 
-        loss, NLL, KL = model.calculate_loss(xs, beta=beta)
+        loss, NLL, KL, z_x_mean[batch_idx], z_x_log_var[batch_idx] = model.calculate_loss(xs, beta=beta)
         loss.backward()
         optimizer.step()
 
@@ -49,6 +53,11 @@ def train_epoch(model, epoch, loader, optimizer, beta, rec_img_path=None, writer
     epoch_loss = np.average(batch_losses)
     epoch_RE = np.average(batch_RE)
     epoch_KL = np.average(batch_KL)
+
+    if writer is not None:
+
+        writer.add_scalar(tag='latent/var_of_mean', scalar_value=np.var(z_x_mean), global_step=epoch)
+        writer.add_scalar(tag='latent/mean_of_var', scalar_value=np.mean(z_x_log_var), global_step=epoch)
 
     return epoch_loss, epoch_RE, epoch_KL
 
@@ -63,7 +72,7 @@ def validation_epoch(model, beta, loader, device=torch.device("cpu")):
     for batch_idx, (xs, _) in enumerate(loader):
         xs = xs.view(loader.batch_size, -1).to(device)
 
-        loss, NLL, KL = model.calculate_loss(xs, beta=beta)
+        loss, NLL, KL, _, _ = model.calculate_loss(xs, beta=beta)
 
         batch_losses[batch_idx] = loss
         batch_RE[batch_idx] = NLL

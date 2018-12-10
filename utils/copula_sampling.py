@@ -103,7 +103,7 @@ def sampling_from_gaussian_copula(L, d, n=1):
     """
 
     size = (n, 1, d)
-    L = torch.clamp(L, min=0 + tollerance, max=1 - tollerance)
+    L = torch.clamp(L, min=0 + tollerance, max=1)
 
     zs = torch.randn(size=size)
     if L.is_cuda:

@@ -80,6 +80,8 @@ class NewCopulaVAE(BaseVAE):
         batch_size = x.shape[0]
         x = self.q_z_layers(x)
         L_x, z_x_mean, z_x_log_var = self.L_x(x), self.mean(x), self.log_var(x)
+
+        # TODO: Check that with I one gets a standard gaussian
         z_x = sampling_from_gaussian_copula(L=L_x, d=self.dimension_latent_space, n=batch_size)
         z_x = normal_icdf(z_x, loc=z_x_mean, scale=z_x_log_var)
 
@@ -99,7 +101,8 @@ class NewCopulaVAE(BaseVAE):
 
         idx_diag = np.diag_indices(self.dimension_latent_space)
         L_x = torch.zeros([batch_size, self.dimension_latent_space, self.dimension_latent_space]).to(self.device)
-        L_x[:, idx_diag[0], idx_diag[1]] = torch.sigmoid(self.L_layers(x)) + tollerance
+        # L_x[:, idx_diag[0], idx_diag[1]] = torch.sigmoid(self.L_layers(x)) + tollerance
+
         L_x[:, idx_diag[0], idx_diag[1]] = 1
 
         return L_x
@@ -123,8 +126,10 @@ class NewCopulaVAE(BaseVAE):
 
     def p_z(self, n):
 
-        eye = torch.eye(self.dimension_latent_space)
-        return normal_icdf(sampling_from_gaussian_copula(L=eye, d=self.dimension_latent_space, n=n))
+        return torch.randn(n, self.dimension_latent_space)
+
+        # eye = torch.eye(self.dimension_latent_space)
+        # return normal_icdf(sampling_from_gaussian_copula(L=eye, d=self.dimension_latent_space, n=n))
 
     def calculate_loss(self, x, beta=1, average=True):
 
@@ -161,8 +166,10 @@ class NewCopulaVAE(BaseVAE):
             loss = torch.mean(loss)
             RE = torch.mean(RE)
             KL = torch.mean(KL)
+            z_x_mean = torch.mean(z_x_mean)
+            z_x_log_var = torch.mean(z_x_log_var)
 
-        return loss, RE, KL
+        return loss, RE, KL, z_x_mean, z_x_log_var
 
     def compute_KL_copula(self, L):
 
@@ -180,8 +187,7 @@ class NewCopulaVAE(BaseVAE):
 
         log_p_z = log_density_standard_Normal(z)
         log_q_z = log_density_Normal(z, means, log_vars)
-        lol = torch.sum(log_q_z - log_p_z, dim=1)
-        return lol
+        return torch.sum(log_q_z - log_p_z, dim=1)
 
     def sampling_from_normal(self, mean, log_variance):
 

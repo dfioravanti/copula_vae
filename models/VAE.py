@@ -128,10 +128,8 @@ class VAE(BaseVAE):
             loss = torch.mean(loss)
             RE = torch.mean(RE)
             KL = torch.mean(KL)
-            z_x_mean = torch.mean(z_x_mean)
-            z_x_log_var = torch.mean(z_x_log_var)
 
-        return loss, RE, KL, z_x_mean, z_x_log_var
+        return loss, RE, KL
 
     def p_z(self, n):
 

@@ -78,9 +78,8 @@ class NewCopulaVAE(BaseVAE):
         x = self.q_z_layers(x)
         L_x, z_x_mean, z_x_log_var = self.L_x(x), self.mean(x), self.log_var(x)
 
-        # TODO: Check that with I one gets a standard gaussian
         z_x = sampling_from_gaussian_copula(L=L_x, d=self.dimension_latent_space, n=batch_size)
-        z_x = normal_icdf(z_x, loc=z_x_mean, scale=z_x_log_var)
+        z_x = normal_icdf(z_x, loc=z_x_mean, scale=torch.exp(z_x_log_var))
 
         return z_x, L_x, z_x_mean, z_x_log_var
 
@@ -98,8 +97,7 @@ class NewCopulaVAE(BaseVAE):
 
         idx_diag = np.diag_indices(self.dimension_latent_space)
         L_x = torch.zeros([batch_size, self.dimension_latent_space, self.dimension_latent_space]).to(self.device)
-        # L_x[:, idx_diag[0], idx_diag[1]] = torch.sigmoid(self.L_layers(x)) + tollerance
-
+        #L_x[:, idx_diag[0], idx_diag[1]] = torch.sigmoid(self.L_layers(x)) + tollerance
         L_x[:, idx_diag[0], idx_diag[1]] = 1
 
         return L_x
@@ -163,10 +161,8 @@ class NewCopulaVAE(BaseVAE):
             loss = torch.mean(loss)
             RE = torch.mean(RE)
             KL = torch.mean(KL)
-            z_x_mean = torch.mean(z_x_mean)
-            z_x_log_var = torch.mean(z_x_log_var)
 
-        return loss, RE, KL, z_x_mean, z_x_log_var
+        return loss, RE, KL
 
     def compute_KL_copula(self, L):
 

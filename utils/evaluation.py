@@ -32,7 +32,7 @@ def plot_samples(model, output_dir=None, writer=None, n_samples=100, n_rows=10):
 if __name__ == '__main__':
     import pathlib
     import torch
-    from models.NewCopulaVAE import NewCopulaVAE
+    from models.CopulaVAE import CopulaVAE
     from models.VAE import VAE
 
     path = pathlib.Path('../outputs') / 'trained' / 'fashionmnist_bin_shallow_copula_gaussian_50' / 'best.tar'
@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     checkpoint = torch.load(path, map_location='cpu')
 
-    model = NewCopulaVAE(dimension_latent_space=z_dim, input_shape=input_shape, dataset_type="binary")
+    model = CopulaVAE(dimension_latent_space=z_dim, input_shape=input_shape, dataset_type="binary")
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     # check_plots(model)

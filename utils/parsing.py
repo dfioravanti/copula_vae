@@ -11,10 +11,7 @@ import torch
 import torch.nn as nn
 import yaml
 
-from models.ConvLayer import ConvMarginalVAE, ConvDiagonalMarginalVAE
-from models.DeepLayer import DeepMarginalVAE, DeepDiagonalMarginalVAE
-from models.ShallowLayer import ShallowCopulaVAE, ShallowMarginalVAE, ShallowDiagonalMarginalVAE
-from models.NewCopulaVAE import NewCopulaVAE
+from models.CopulaVAE import CopulaVAE
 from models.VAE import VAE, DeepVAE
 from utils.HashTools import mnemonify_hash, string_to_md5
 
@@ -158,50 +155,10 @@ def get_model(args, input_shape, dataset_type, output_dir=None):
     elif args.type_vae == 'copula':
 
         if args.architecture == 'shallow':
-            model = NewCopulaVAE(dimension_latent_space=args.latent_size,
-                                 input_shape=input_shape,
-                                 dataset_type=dataset_type,
-                                 device=args.device)
-
-        elif args.architecture == 'deep':
-            model = DeepMarginalVAE(dimension_latent_space=args.latent_size,
-                                    input_shape=input_shape,
-                                    dataset_type=dataset_type,
-                                    marginals=args.marginals,
-                                    device=args.device)
-
-        elif args.architecture == 'conv':
-            model = ConvMarginalVAE(dimension_latent_space=args.latent_size,
-                                    input_shape=input_shape,
-                                    dataset_type=dataset_type,
-                                    device=args.device)
-
-    elif args.type_vae == 'diagonal':
-
-        if args.architecture == 'shallow':
-            model = ShallowDiagonalMarginalVAE(dimension_latent_space=args.latent_size,
-                                               input_shape=input_shape,
-                                               dataset_type=dataset_type,
-                                               marginals=args.marginals,
-                                               device=args.device)
-        elif args.architecture == 'deep':
-            model = DeepDiagonalMarginalVAE(dimension_latent_space=args.latent_size,
-                                            input_shape=input_shape,
-                                            dataset_type=dataset_type,
-                                            marginals=args.marginals,
-                                            device=args.device)
-        elif args.architecture == 'conv':
-            model = ConvDiagonalMarginalVAE(dimension_latent_space=args.latent_size,
-                                            input_shape=input_shape,
-                                            dataset_type=dataset_type,
-                                            device=args.device)
-
-    elif args.type_vae == 'copulaV2':
-        if args.architecture == 'shallow':
-            model = ShallowCopulaVAE(dimension_latent_space=args.latent_size,
-                                     input_shape=input_shape,
-                                     dataset_type=dataset_type,
-                                     device=args.device)
+            model = CopulaVAE(dimension_latent_space=args.latent_size,
+                              input_shape=input_shape,
+                              dataset_type=dataset_type,
+                              device=args.device)
 
     if model is None:
         error = f'We do not support {args.type_vae} with {args.architecture} as architecture'

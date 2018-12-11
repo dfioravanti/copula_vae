@@ -12,7 +12,7 @@ from utils.copula_sampling import sampling_from_gaussian_copula
 from utils.settings import tollerance
 
 
-class NewCopulaVAE(BaseVAE):
+class CopulaVAE(BaseVAE):
 
     def __init__(self,
                  dimension_latent_space,
@@ -20,10 +20,10 @@ class NewCopulaVAE(BaseVAE):
                  dataset_type,
                  device=torch.device("cpu")):
 
-        super(NewCopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
-                                           input_shape=input_shape,
-                                           dataset_type=dataset_type,
-                                           device=device)
+        super(CopulaVAE, self).__init__(dimension_latent_space=dimension_latent_space,
+                                        input_shape=input_shape,
+                                        dataset_type=dataset_type,
+                                        device=device)
 
         # Encoder q(z|x)
 

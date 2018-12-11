@@ -79,13 +79,13 @@ def validation_epoch(model, beta, loader, device=torch.device("cpu")):
 
 
 def compute_beta(epoch, warmup):
-
     return min(epoch / warmup, 1) if warmup is not None else 1
 
 
-def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=50, warmup=None, grace_early_stopping=10,
-                     checkpoint=None, output_dir=None, frequency_checkpoints=None, checkpoint_dir=None, writer=None,
-                     device=torch.device("cpu")):
+def train_on_dataset(model, loader_train, loader_validation, optimizer, scheduler=None, epochs=50, warmup=None,
+                     grace_early_stopping=10, checkpoint=None, output_dir=None, frequency_checkpoints=None,
+                     checkpoint_dir=None, writer=None, device=torch.device("cpu")):
+
     # Initialization
     best_loss = math.inf
     early_stopping_strikes = 0
@@ -128,6 +128,8 @@ def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=5
             writer.add_scalar(tag='KL/val', scalar_value=KL_val, global_step=epoch)
 
         if warmup is None or epoch > warmup:
+
+            scheduler.step(loss_val)
 
             # Checkpointing
 

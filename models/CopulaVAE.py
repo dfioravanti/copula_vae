@@ -121,10 +121,8 @@ class CopulaVAE(BaseVAE):
 
     def p_z(self, n):
 
-        return torch.randn(n, self.dimension_latent_space)
-
-        # eye = torch.eye(self.dimension_latent_space)
-        # return normal_icdf(sampling_from_gaussian_copula(L=eye, d=self.dimension_latent_space, n=n))
+        eye = torch.eye(self.dimension_latent_space)
+        return normal_icdf(sampling_from_gaussian_copula(L=eye, d=self.dimension_latent_space, n=n))
 
     def calculate_loss(self, x, beta=1, average=True):
 

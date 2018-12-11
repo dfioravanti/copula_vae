@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from tensorboardX import SummaryWriter
 from torch.optim import Adam
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from loaders.load_funtions import load_dataset
 from utils.parsing import get_args_and_setting_up, get_model
@@ -27,10 +28,15 @@ def main(args):
                       input_shape=input_shape,
                       dataset_type=dataset_type,
                       output_dir=args.output_dir)
+
     optimizer = Adam(model.parameters(), lr=args.lr)
+    scheduler = ReduceLROnPlateau(optimizer=optimizer,
+                                  factor=0.707,
+                                  patience=10,
+                                  )
 
     model = train_on_dataset(model=model, loader_train=train_loader, loader_validation=validation_loader,
-                             optimizer=optimizer, epochs=args.epochs, warmup=args.warmup,
+                             optimizer=optimizer, scheduler=scheduler, epochs=args.epochs, warmup=args.warmup,
                              grace_early_stopping=args.grace_early_stopping, output_dir=args.output_dir,
                              frequency_checkpoints=args.frequency_checkpoints, checkpoint_dir=args.checkpoint_dir,
                              writer=writer, device=args.device)

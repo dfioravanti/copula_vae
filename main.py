@@ -9,6 +9,7 @@ from torch.optim import Adam
 from loaders.load_funtions import load_dataset
 from utils.parsing import get_args_and_setting_up, get_model
 from utils.training import train_on_dataset
+from utils.evaluation import plot_samples
 
 
 def main(args):
@@ -34,20 +35,26 @@ def main(args):
                              frequency_checkpoints=args.frequency_checkpoints, checkpoint_dir=args.checkpoint_dir,
                              writer=writer, device=args.device)
 
-    torch.save(model.state_dict(), args.output_dir / 'model_trained')
+    torch.save({
+        'epoch': args.epochs,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'z_dim': model.dimension_latent_space
+    }, args.output_dir / 'model_trained.tar')
 
     results_test = model.calculate_likelihood(test_loader,
                                               number_samples=args.samples_ll,
                                               writer=writer)
 
+    plot_samples(model, args.output_dir)
+
     if writer is not None:
         writer.add_scalar('test/NLL', results_test)
-        writer.export_scalars_to_json(args.log_dir / 'scalars.json')
-        writer.close()
+    writer.export_scalars_to_json(args.log_dir / 'scalars.json')
+    writer.close()
 
 
 if __name__ == '__main__':
-
     # Parse the config file
 
     args = get_args_and_setting_up()

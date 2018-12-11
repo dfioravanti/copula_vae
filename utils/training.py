@@ -137,6 +137,7 @@ def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=5
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': loss_train,
+                    'z_dim': model.dimension_latent_space,
                 }, checkpoint_dir / f'model_epoch_{epoch:0=3d}.tar')
 
             # Early stopping and checkpointing best model
@@ -149,6 +150,7 @@ def train_on_dataset(model, loader_train, loader_validation, optimizer, epochs=5
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': loss_train,
+                    'z_dim': model.dimension_latent_space,
                 }, checkpoint_dir / 'best.tar')
 
             else:

@@ -422,6 +422,45 @@ def load_cifar10(root_dir=None, batch_size=20, shuffle=True, transform=None, dow
     return train_loader, test_loader, valid_loader, dataset_type
 
 
+def load_CelebA(root_dir=None, batch_size=50, shuffle=True):
+    dataset_type = "continuous"
+    drop_to_make_batch_size_work = 99
+
+    if root_dir is None:
+        root_dir = pathlib.Path(sys.argv[0]).parents[0] / 'datasets'
+
+    dataset = np.load(root_dir / 'CelebA' / 'celebA.npy')
+
+    idx = np.arange(len(dataset))
+    if shuffle:
+        np.random.shuffle(idx)
+    idx = idx[:-drop_to_make_batch_size_work]
+
+    train_size = int(len(idx) * 0.1)
+    idx_train, idx_test = idx[:train_size], idx[train_size:]
+
+    val_size = int(len(idx_train) * 0.1)
+    idx_train, idx_valid = idx[:-val_size], idx[-val_size:]
+
+    sampler_train = data_utils.SubsetRandomSampler(idx_train)
+    sampler_test = data_utils.SubsetRandomSampler(idx_test)
+    sampler_valid = data_utils.SubsetRandomSampler(idx_valid)
+
+    loader_train = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, sampler=sampler_train, shuffle=shuffle
+    )
+
+    loader_valid = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, sampler=sampler_valid, shuffle=shuffle
+    )
+
+    loader_test = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, sampler=sampler_test, shuffle=shuffle
+    )
+
+    return loader_train, loader_valid, loader_test, dataset_type
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 

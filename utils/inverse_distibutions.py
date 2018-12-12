@@ -151,4 +151,6 @@ def exp_icdf(p, rate):
             float(s): quartile of p
     """
 
+    p = torch.clamp(p, min=0 + tollerance, max=1 - tollerance)
+
     return -torch.log(1 - p) / rate

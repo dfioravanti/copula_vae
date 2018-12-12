@@ -6,8 +6,8 @@ from torch import nn
 from models.BaseVAE import BaseVAE
 
 from utils.distributions import log_density_bernoulli, log_density_standard_normal, log_density_normal, \
-    log_density_laplace, log_density_log_normal
-from utils.inverse_distibutions import normal_icdf, laplace_icdf, log_norm_icdf
+    log_density_laplace, log_density_log_normal, log_density_exponential
+from utils.inverse_distibutions import normal_icdf, laplace_icdf, log_norm_icdf, exp_icdf
 from utils.copula_sampling import sampling_from_gaussian_copula
 from utils.settings import tollerance
 
@@ -222,3 +222,53 @@ class LogNormalCopulaVAE(BaseCopulaVAE):
         log_q_z = log_density_log_normal(z, means, torch.exp(log_vars))
         return torch.sum(log_q_z - log_p_z, dim=1)
 
+
+class MixCopulaVAE(BaseCopulaVAE):
+
+    def q_z(self, x):
+        batch_size = x.shape[0]
+        x = self.q_z_layers(x)
+        L_x, z_x_mean, z_x_log_var = self.L_x(x), self.mean(x), self.log_var(x)
+
+        s_x = sampling_from_gaussian_copula(L=L_x, d=self.dimension_latent_space, n=batch_size)
+        z_1 = normal_icdf(s_x[:, :25], loc=z_x_mean[:, :25], scale=torch.exp(z_x_log_var[:, :25]))
+        z_2 = log_norm_icdf(s_x[:, 25:], loc=z_x_mean[:, 25:], scale=torch.exp(z_x_log_var[:, 25:]))
+        z_x = torch.cat((z_1, z_2), 1)
+
+        return z_x, L_x, z_x_mean, z_x_log_var
+
+    def p_z(self, n):
+        eye = torch.eye(self.dimension_latent_space).to(self.device)
+        z_1 = normal_icdf(sampling_from_gaussian_copula(L=eye, d=self.dimension_latent_space//2, n=n))
+        z_2 = log_norm_icdf(sampling_from_gaussian_copula(L=eye, d=self.dimension_latent_space // 2, n=n))
+        z = torch.cat((z_1, z_2), 1)
+        return z
+
+    def compute_KL_marginals(self, z, means, log_vars):
+        log_p_z_1 = log_density_normal(z[:, :25])
+        log_q_z_1 = log_density_normal(z[:, :25], means[:, :25], torch.exp(log_vars[:, :25]))
+        log_p_z_2 = log_density_log_normal(z[:, 25:])
+        log_q_z_2 = log_density_log_normal(z[:, 25:], means[:, 25:], torch.exp(log_vars[:, 25:]))
+        return torch.sum(log_q_z_1 - log_p_z_1, dim=1) + torch.sum(log_q_z_2 - log_p_z_2, dim=1)
+
+
+class ExponentialCopulaVAE(BaseCopulaVAE):
+
+    def q_z(self, x):
+        batch_size = x.shape[0]
+        x = self.q_z_layers(x)
+        L_x, z_x_rate = self.L_x(x), torch.sigmoid(self.mean(x)) + tollerance
+
+        z_x = sampling_from_gaussian_copula(L=L_x, d=self.dimension_latent_space, n=batch_size)
+        z_x = exp_icdf(z_x, rate=z_x_rate)
+
+        return z_x, L_x, z_x_rate, 0
+
+    def p_z(self, n):
+        eye = torch.eye(self.dimension_latent_space).to(self.device)
+        return exp_icdf(sampling_from_gaussian_copula(L=eye, d=self.dimension_latent_space, n=n))
+
+    def compute_KL_marginals(self, z, means, log_vars):
+        log_p_z = log_density_exponential(z)
+        log_q_z = log_density_exponential(z, means)
+        return torch.sum(log_q_z - log_p_z, dim=1)

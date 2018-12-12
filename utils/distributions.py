@@ -139,6 +139,22 @@ def log_density_laplace(value, loc=0, scale=1, average=False, reduce_dim=None):
         return torch.sum(log_densities, reduce_dim)
 
 
+def log_density_exponential(x, rate=1, average=False, reduce_dim=None):
+    if isinstance(rate, Number):
+        rate = torch.tensor(rate).float()
+        if x.is_cuda:
+            rate = rate.to(x.get_device())
+
+    log_densities = rate * x
+
+    if reduce_dim is None:
+        return log_densities
+    elif average:
+        return torch.mean(log_densities, reduce_dim)
+    else:
+        return torch.sum(log_densities, reduce_dim)
+
+
 def log_density_bernoulli(x, ps, average=False, reduce_dim=None):
     """
 

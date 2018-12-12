@@ -16,24 +16,6 @@ def gaussian_cdf(means, sigmas, values):
     return 0.5 * (1 + torch.erf((values - means) * sigmas.reciprocal() / math.sqrt(2)))
 
 
-def log_normal_by_component(x, mean, log_var, average=False):
-    # log_normal = -0.5 * np.log(2*np.pi) - log_var + torch.pow(x - mean, 2) / torch.exp(log_var))
-
-    if average:
-        return torch.mean(log_normal)
-    else:
-        return torch.sum(log_normal)
-
-
-def log_normal_standard(x, average=False):
-    log_normal = -0.5 * torch.pow(x, 2)
-
-    if average:
-        return torch.mean(log_normal)
-    else:
-        return torch.sum(log_normal)
-
-
 # Density functions
 
 def log_density_gaussian_copula(xs, R_inv):
@@ -66,18 +48,18 @@ def log_density_gaussian_copula(xs, R_inv):
     return -0.5 * icdf_gaussian_xs.t() @ (R_inv - eye) @ icdf_gaussian_xs
 
 
-def log_density_Normal(x, mean, log_var, average=False, reduce_dim=None):
+def log_density_normal(x, mean=0, var=1, average=False, reduce_dim=None):
     """
 
     :param x:
     :param mean:
-    :param log_var:
+    :param var:
     :param average:
     :param reduce_dim:
     :return:
     """
 
-    log_densities = -0.5 * (log_var + torch.pow(x - mean, 2) / torch.exp(log_var))
+    log_densities = -0.5 * (var + torch.pow(x - mean, 2) / var)
 
     if reduce_dim is None:
         return log_densities
@@ -87,7 +69,7 @@ def log_density_Normal(x, mean, log_var, average=False, reduce_dim=None):
         return torch.sum(log_densities, reduce_dim)
 
 
-def log_density_standard_Normal(x, average=False, reduce_dim=None):
+def log_density_standard_normal(x, average=False, reduce_dim=None):
     """
 
     :param x:
@@ -97,6 +79,52 @@ def log_density_standard_Normal(x, average=False, reduce_dim=None):
     """
 
     log_densities = -0.5 * torch.pow(x, 2)
+
+    if reduce_dim is None:
+        return log_densities
+    elif average:
+        return torch.mean(log_densities, reduce_dim)
+    else:
+        return torch.sum(log_densities, reduce_dim)
+
+
+def log_density_log_normal(x, mean=0, var=1, average=False, reduce_dim=None):
+    """
+
+    :param x:
+    :param mean:
+    :param var:
+    :param average:
+    :param reduce_dim:
+    :return:
+    """
+
+    return log_density_normal(torch.log(x), mean, var, average, reduce_dim)
+
+
+def log_density_laplace(value, loc=0, scale=1, average=False, reduce_dim=None):
+    """
+
+    Parameters
+    ----------
+    value
+    scale
+    loc
+    average
+    reduce_dim
+
+    Returns
+    -------
+
+    """
+
+    if isinstance(scale, int):
+        scale = torch.tensor(scale).float()
+
+    if (value == loc).any():
+        print('lol')
+
+    log_densities = torch.log(2 * scale) - torch.abs(value - loc) / scale
 
     if reduce_dim is None:
         return log_densities

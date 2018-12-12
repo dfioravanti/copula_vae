@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
 
-from utils.inverse_distibutions import normal_icdf, laplace_icdf, cauchy_icdf, exp_icdf, logNorm_icdf
+from utils.inverse_distibutions import normal_icdf, laplace_icdf, cauchy_icdf, exp_icdf, log_norm_icdf
 
 
 class Flatten(nn.Module):
@@ -68,7 +68,7 @@ class ICDF(nn.Module):
         elif self.distribution == 'laplace':
             return laplace_icdf(p=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
         elif self.distribution == 'log_norm':
-            return logNorm_icdf(p=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
+            return log_norm_icdf(p=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
         elif self.distribution == 'cauchy':
             return cauchy_icdf(p=x, loc=self.loc, scale=torch.log(torch.exp(self.scale) + 1))
         elif self.distribution == 'exp':

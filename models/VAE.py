@@ -3,7 +3,7 @@ import torch
 from torch import nn
 
 from models.BaseVAE import BaseVAE
-from utils.distributions import log_density_bernoulli, log_density_Normal, log_density_standard_Normal
+from utils.distributions import log_density_bernoulli, log_density_normal, log_density_standard_normal
 
 
 class VAE(BaseVAE):
@@ -91,7 +91,7 @@ class VAE(BaseVAE):
 
     def log_desity_prior(self, z):
 
-        return log_density_standard_Normal(z, reduce_dim=1)
+        return log_density_normal(z, reduce_dim=1)
 
     def calculate_loss(self, x, beta=1, average=True):
 
@@ -118,7 +118,7 @@ class VAE(BaseVAE):
             RE = - self.L2(x, x_mean)
 
         log_p_z = self.log_desity_prior(z_x)
-        log_q_z = log_density_Normal(z_x, z_x_mean, z_x_log_var, reduce_dim=1)
+        log_q_z = log_density_normal(z_x, z_x_mean, torch.exp(z_x_log_var), reduce_dim=1)
         KL = log_q_z - log_p_z
 
         # We are going to minimise so we need to take -ELBO

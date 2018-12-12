@@ -71,7 +71,7 @@ def normal_icdf(p, loc=0, scale=1):
     return loc + scale * standard_normal_icdf(p)
 
 
-def logNorm_icdf(p, loc, scale):
+def log_norm_icdf(p, loc=0, scale=1):
     """
     Compute the componentwise inverse cdf of a logNormal with mean as loc and variance as scale.
 

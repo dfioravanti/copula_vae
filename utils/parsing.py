@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import yaml
 
-from models.CopulaVAE import CopulaVAE
+from models.CopulaVAE import GaussianCopulaVAE, LaplaceCopulaVAE, LogNormalCopulaVAE
 from models.VAE import VAE, DeepVAE
 from utils.HashTools import mnemonify_hash, string_to_md5
 
@@ -51,7 +51,7 @@ def get_args_and_setting_up():
 
     experiment_description = f'{experiment_description}_{args.architecture}_{args.type_vae}'
 
-    if args.type_vae == 'copula' or args.type_vae == 'diagonal':
+    if args.type_vae == 'copula':
         experiment_description = f'{experiment_description}_{args.marginals}'
 
     experiment_description = f'{experiment_description}_{args.latent_size}'
@@ -155,10 +155,24 @@ def get_model(args, input_shape, dataset_type, output_dir=None):
     elif args.type_vae == 'copula':
 
         if args.architecture == 'shallow':
-            model = CopulaVAE(dimension_latent_space=args.latent_size,
-                              input_shape=input_shape,
-                              dataset_type=dataset_type,
-                              device=args.device)
+
+            if args.marginals == "gaussian":
+                model = GaussianCopulaVAE(dimension_latent_space=args.latent_size,
+                                          input_shape=input_shape,
+                                          dataset_type=dataset_type,
+                                          device=args.device)
+
+            elif args.marginals == "laplace":
+                model = LaplaceCopulaVAE(dimension_latent_space=args.latent_size,
+                                         input_shape=input_shape,
+                                         dataset_type=dataset_type,
+                                         device=args.device)
+
+            elif args.marginals == "log_norm":
+                model = LogNormalCopulaVAE(dimension_latent_space=args.latent_size,
+                                           input_shape=input_shape,
+                                           dataset_type=dataset_type,
+                                           device=args.device)
 
     if model is None:
         error = f'We do not support {args.type_vae} with {args.architecture} as architecture'

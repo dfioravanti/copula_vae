@@ -1,4 +1,5 @@
 import math
+from numbers import Number
 
 import torch
 
@@ -59,7 +60,8 @@ def log_density_normal(x, mean=0, var=1, average=False, reduce_dim=None):
     :return:
     """
 
-    log_densities = -0.5 * (var + torch.pow(x - mean, 2) / var)
+    var = torch.tensor(var).float() if isinstance(var, Number) else var
+    log_densities = -0.5 * (torch.log(var) + torch.pow(x - mean, 2) / var)
 
     if reduce_dim is None:
         return log_densities
@@ -118,12 +120,7 @@ def log_density_laplace(value, loc=0, scale=1, average=False, reduce_dim=None):
 
     """
 
-    if isinstance(scale, int):
-        scale = torch.tensor(scale).float()
-
-    if (value == loc).any():
-        print('lol')
-
+    scale = torch.tensor(scale).float() if isinstance(scale, Number) else scale
     log_densities = torch.log(2 * scale) - torch.abs(value - loc) / scale
 
     if reduce_dim is None:

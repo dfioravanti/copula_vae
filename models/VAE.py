@@ -133,7 +133,7 @@ class VAE(BaseVAE):
 
     def p_z(self, n):
 
-        return torch.randn(n, self.dimension_latent_space)
+        return torch.randn(n, self.dimension_latent_space).to(self.device)
 
 
 class DeepVAE(VAE):

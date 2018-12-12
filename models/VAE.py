@@ -117,9 +117,11 @@ class VAE(BaseVAE):
         elif self.dataset_type == 'gray' or self.dataset_type == 'continuous':
             RE = - self.L2(x, x_mean)
 
-        log_p_z = self.log_desity_prior(z_x)
-        log_q_z = log_density_normal(z_x, z_x_mean, torch.exp(z_x_log_var), reduce_dim=1)
-        KL = log_q_z - log_p_z
+        #log_p_z = self.log_desity_prior(z_x)
+        #log_q_z = log_density_normal(z_x, z_x_mean, torch.exp(z_x_log_var), reduce_dim=1)
+        #KL = log_q_z - log_p_z
+
+        KL = self.compute_KL(z_x, z_x_mean, z_x_log_var)
 
         # We are going to minimise so we need to take -ELBO
         loss = -RE + beta * KL
@@ -130,6 +132,11 @@ class VAE(BaseVAE):
             KL = torch.mean(KL)
 
         return loss, RE, KL
+
+    def compute_KL(self, z, means, log_vars):
+        log_p_z = log_density_normal(z)
+        log_q_z = log_density_normal(z, means, torch.exp(log_vars))
+        return torch.sum(log_q_z - log_p_z, dim=1)
 
     def p_z(self, n):
 

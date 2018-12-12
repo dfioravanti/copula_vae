@@ -33,6 +33,7 @@ def main(args):
     scheduler = ReduceLROnPlateau(optimizer=optimizer,
                                   factor=0.707,
                                   patience=10,
+                                  min_lr=1e-5
                                   )
 
     model = train_on_dataset(model=model, loader_train=train_loader, loader_validation=validation_loader,
